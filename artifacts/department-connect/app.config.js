@@ -23,7 +23,7 @@ module.exports = {
       versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/images/icon.png",
-        backgroundColor: "#2D1B69",
+        backgroundColor: "#2D1B69", 
       },
     },
     web: {
