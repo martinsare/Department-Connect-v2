@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import Svg, { Rect } from "react-native-svg";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
 const QR_TOKEN = "DEPT_CONNECT_2026";
@@ -51,6 +52,7 @@ export default function AttendanceScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { attendanceS1, markAttendance, attendedClasses, classes } = useData();
+  const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);
@@ -120,7 +122,15 @@ export default function AttendanceScreen() {
           setScanState("already");
           setScannedLabel(`${cls.courseCode} — ${cls.courseName}`);
         } else {
-          markAttendance(cls.id);
+          const now = new Date();
+          const scanTime = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+          markAttendance(cls.id, {
+            studentId: user?.id ?? "unknown",
+            name: user ? `${user.firstName} ${user.surname}` : "Unknown Student",
+            matricNumber: user?.matricNumber ?? "—",
+            level: user?.level ?? "—",
+            scanTime,
+          });
           setScanState("success");
           setScannedLabel(`${cls.courseCode} — ${cls.courseName}`);
         }

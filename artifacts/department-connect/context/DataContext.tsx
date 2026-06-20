@@ -48,6 +48,14 @@ export interface AttendanceRecord {
   percentage: number;
 }
 
+export interface ClassAttendee {
+  studentId: string;
+  name: string;
+  matricNumber: string;
+  level: string;
+  scanTime: string;
+}
+
 export interface AppNotification {
   id: string;
   category: NotificationCategory;
@@ -283,6 +291,113 @@ const ATTENDANCE_S1: AttendanceRecord[] = [
   { courseCode: "CSC313", courseName: "Computer Architecture", attended: 9, total: 12, percentage: 75 },
 ];
 
+function att(id: string, name: string, matric: string, time: string, level = "300L"): ClassAttendee {
+  return { studentId: id, name, matricNumber: matric, level, scanTime: time };
+}
+
+const SEED_CLASS_ATTENDEES: Record<string, ClassAttendee[]> = {
+  cl1: [
+    att("s1", "Tolu Adeyemi", "ART2500001", "8:02 AM"),
+    att("s2", "Chidi Okonkwo", "ART2500002", "8:04 AM"),
+    att("s6", "Emmanuel Obi", "ART2500006", "8:06 AM"),
+    att("x1", "Amaka Eze", "ART2500009", "8:07 AM"),
+    att("x2", "Seun Bakare", "ART2500010", "8:09 AM"),
+    att("x3", "Yusuf Musa", "ART2500011", "8:10 AM"),
+    att("x4", "Ngozi Nwosu", "ART2500012", "8:11 AM"),
+    att("x5", "Bola Ogundipe", "ART2500013", "8:12 AM"),
+    att("x6", "Ifeanyi Okeke", "ART2500014", "8:14 AM"),
+    att("x7", "Halima Sule", "ART2500015", "8:15 AM"),
+    att("x8", "Dare Adeniyi", "ART2500016", "8:17 AM"),
+    att("x9", "Chisom Onyia", "ART2500017", "8:19 AM"),
+    att("x10", "Kunle Adesola", "ART2500018", "8:20 AM"),
+    att("x11", "Esther Nwachukwu", "ART2500019", "8:22 AM"),
+    att("x12", "Biodun Fashola", "ART2500020", "8:23 AM"),
+    att("x13", "Musa Aliyu", "ART2500021", "8:25 AM"),
+    att("x14", "Adaeze Okonkwo", "ART2500022", "8:26 AM"),
+    att("x15", "Gbenga Olatunji", "ART2500023", "8:28 AM"),
+  ],
+  cl2: [
+    att("s1", "Tolu Adeyemi", "ART2500001", "10:03 AM"),
+    att("s2", "Chidi Okonkwo", "ART2500002", "10:04 AM"),
+    att("s6", "Emmanuel Obi", "ART2500006", "10:06 AM"),
+    att("x1", "Amaka Eze", "ART2500009", "10:07 AM"),
+    att("x2", "Seun Bakare", "ART2500010", "10:08 AM"),
+    att("x3", "Yusuf Musa", "ART2500011", "10:10 AM"),
+    att("x4", "Ngozi Nwosu", "ART2500012", "10:11 AM"),
+    att("x5", "Bola Ogundipe", "ART2500013", "10:12 AM"),
+    att("x6", "Ifeanyi Okeke", "ART2500014", "10:14 AM"),
+    att("x7", "Halima Sule", "ART2500015", "10:15 AM"),
+    att("x8", "Dare Adeniyi", "ART2500016", "10:16 AM"),
+    att("x9", "Chisom Onyia", "ART2500017", "10:17 AM"),
+    att("x10", "Kunle Adesola", "ART2500018", "10:19 AM"),
+    att("x11", "Esther Nwachukwu", "ART2500019", "10:21 AM"),
+    att("x12", "Biodun Fashola", "ART2500020", "10:22 AM"),
+    att("x13", "Musa Aliyu", "ART2500021", "10:23 AM"),
+    att("x14", "Adaeze Okonkwo", "ART2500022", "10:25 AM"),
+    att("x15", "Gbenga Olatunji", "ART2500023", "10:26 AM"),
+    att("x16", "Nkechi Eze", "ART2500024", "10:28 AM"),
+    att("x17", "Taiwo Afolabi", "ART2500025", "10:29 AM"),
+    att("x18", "Uche Nwosu", "ART2500026", "10:31 AM"),
+  ],
+  cl3: [
+    att("s1", "Tolu Adeyemi", "ART2500001", "2:03 PM"),
+    att("s2", "Chidi Okonkwo", "ART2500002", "2:05 PM"),
+    att("x1", "Amaka Eze", "ART2500009", "2:07 PM"),
+    att("x3", "Yusuf Musa", "ART2500011", "2:08 PM"),
+    att("x4", "Ngozi Nwosu", "ART2500012", "2:10 PM"),
+    att("x5", "Bola Ogundipe", "ART2500013", "2:11 PM"),
+    att("x6", "Ifeanyi Okeke", "ART2500014", "2:13 PM"),
+    att("x8", "Dare Adeniyi", "ART2500016", "2:15 PM"),
+    att("x9", "Chisom Onyia", "ART2500017", "2:16 PM"),
+    att("x10", "Kunle Adesola", "ART2500018", "2:18 PM"),
+    att("x12", "Biodun Fashola", "ART2500020", "2:19 PM"),
+    att("x14", "Adaeze Okonkwo", "ART2500022", "2:21 PM"),
+    att("x16", "Nkechi Eze", "ART2500024", "2:22 PM"),
+    att("x18", "Uche Nwosu", "ART2500026", "2:24 PM"),
+  ],
+  cl4: [
+    att("s1", "Tolu Adeyemi", "ART2500001", "8:01 AM"),
+    att("s2", "Chidi Okonkwo", "ART2500002", "8:03 AM"),
+    att("s6", "Emmanuel Obi", "ART2500006", "8:04 AM"),
+    att("x1", "Amaka Eze", "ART2500009", "8:05 AM"),
+    att("x2", "Seun Bakare", "ART2500010", "8:07 AM"),
+    att("x3", "Yusuf Musa", "ART2500011", "8:08 AM"),
+    att("x4", "Ngozi Nwosu", "ART2500012", "8:09 AM"),
+    att("x5", "Bola Ogundipe", "ART2500013", "8:11 AM"),
+    att("x6", "Ifeanyi Okeke", "ART2500014", "8:12 AM"),
+    att("x7", "Halima Sule", "ART2500015", "8:14 AM"),
+    att("x8", "Dare Adeniyi", "ART2500016", "8:15 AM"),
+    att("x9", "Chisom Onyia", "ART2500017", "8:17 AM"),
+    att("x10", "Kunle Adesola", "ART2500018", "8:18 AM"),
+    att("x11", "Esther Nwachukwu", "ART2500019", "8:20 AM"),
+    att("x12", "Biodun Fashola", "ART2500020", "8:21 AM"),
+    att("x13", "Musa Aliyu", "ART2500021", "8:22 AM"),
+    att("x15", "Gbenga Olatunji", "ART2500023", "8:24 AM"),
+    att("x16", "Nkechi Eze", "ART2500024", "8:26 AM"),
+    att("x17", "Taiwo Afolabi", "ART2500025", "8:27 AM"),
+    att("x18", "Uche Nwosu", "ART2500026", "8:29 AM"),
+  ],
+  cl5: [
+    att("s1", "Tolu Adeyemi", "ART2500001", "12:02 PM"),
+    att("s2", "Chidi Okonkwo", "ART2500002", "12:04 PM"),
+    att("x1", "Amaka Eze", "ART2500009", "12:05 PM"),
+    att("x2", "Seun Bakare", "ART2500010", "12:07 PM"),
+    att("x3", "Yusuf Musa", "ART2500011", "12:08 PM"),
+    att("x4", "Ngozi Nwosu", "ART2500012", "12:09 PM"),
+    att("x6", "Ifeanyi Okeke", "ART2500014", "12:11 PM"),
+    att("x7", "Halima Sule", "ART2500015", "12:12 PM"),
+    att("x8", "Dare Adeniyi", "ART2500016", "12:14 PM"),
+    att("x9", "Chisom Onyia", "ART2500017", "12:15 PM"),
+    att("x10", "Kunle Adesola", "ART2500018", "12:17 PM"),
+    att("x11", "Esther Nwachukwu", "ART2500019", "12:18 PM"),
+    att("x12", "Biodun Fashola", "ART2500020", "12:20 PM"),
+    att("x14", "Adaeze Okonkwo", "ART2500022", "12:21 PM"),
+    att("x15", "Gbenga Olatunji", "ART2500023", "12:23 PM"),
+    att("x16", "Nkechi Eze", "ART2500024", "12:24 PM"),
+    att("x18", "Uche Nwosu", "ART2500026", "12:26 PM"),
+  ],
+};
+
 const NOTIFICATIONS: AppNotification[] = [
   {
     id: "n1",
@@ -479,7 +594,8 @@ interface DataContextValue {
   markNotificationRead: (id: string) => void;
   approveStudent: (id: string) => void;
   rejectStudent: (id: string, reason: string) => void;
-  markAttendance: (classId: string) => void;
+  classAttendees: Record<string, ClassAttendee[]>;
+  markAttendance: (classId: string, attendee: ClassAttendee) => void;
   attendedClasses: string[];
   payContribution: (id: string) => void;
   addStudent: (student: Omit<StudentRecord, "id">) => void;
@@ -499,6 +615,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [events, setEvents] = useState<AppEvent[]>(EVENTS);
   const [announcements, setAnnouncements] = useState<Announcement[]>(ANNOUNCEMENTS);
   const [attendedClasses, setAttendedClasses] = useState<string[]>([]);
+  const [classAttendees, setClassAttendees] = useState<Record<string, ClassAttendee[]>>(SEED_CLASS_ATTENDEES);
 
   const markNotificationRead = (id: string) => {
     setNotifications((prev) =>
@@ -520,8 +637,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const markAttendance = (classId: string) => {
+  const markAttendance = (classId: string, attendee: ClassAttendee) => {
     setAttendedClasses((prev) => [...prev.filter((c) => c !== classId), classId]);
+    setClassAttendees((prev) => ({
+      ...prev,
+      [classId]: [...(prev[classId] ?? []), attendee],
+    }));
+    setClasses((prev) =>
+      prev.map((c) => c.id === classId ? { ...c, attendanceCount: c.attendanceCount + 1 } : c)
+    );
   };
 
   const payContribution = (id: string) => {
@@ -596,6 +720,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         markNotificationRead,
         approveStudent,
         rejectStudent,
+        classAttendees,
         markAttendance,
         attendedClasses,
         payContribution,

@@ -16,7 +16,7 @@ import * as Haptics from "expo-haptics";
 import QRCode from "react-native-qrcode-svg";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
-import type { ClassSession } from "@/context/DataContext";
+import type { ClassSession, ClassAttendee } from "@/context/DataContext";
 
 const QR_TOKEN = "DEPT_CONNECT_2026";
 
@@ -34,11 +34,72 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
+function AttendeeRow({ item, index }: { item: ClassAttendee; index: number }) {
+  const colors = useColors();
+  const initials = item.name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  const avatarColors = ["#7C3AED", "#8B5CF6", "#A78BFA", "#6D28D9", "#5B21B6"];
+  const bg = avatarColors[index % avatarColors.length];
+
+  return (
+    <View style={[rosterStyles.row, { borderBottomColor: colors.border }]}>
+      <View style={[rosterStyles.avatar, { backgroundColor: bg }]}>
+        <Text style={rosterStyles.avatarText}>{initials}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[rosterStyles.name, { color: colors.foreground }]}>{item.name}</Text>
+        <Text style={[rosterStyles.matric, { color: colors.mutedForeground }]}>
+          {item.matricNumber} · {item.level}
+        </Text>
+      </View>
+      <View style={[rosterStyles.timeBadge, { backgroundColor: colors.primary + "15" }]}>
+        <Ionicons name="time-outline" size={11} color={colors.primary} />
+        <Text style={[rosterStyles.timeText, { color: colors.primary }]}>{item.scanTime}</Text>
+      </View>
+    </View>
+  );
+}
+
+const rosterStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: { fontSize: 13, fontFamily: "Inter_700Bold", color: "#fff" },
+  name: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  matric: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+  timeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  timeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+});
+
 export default function AdminClassesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { classes, toggleAttendanceOpen } = useData();
+  const { classes, classAttendees, toggleAttendanceOpen } = useData();
   const [qrClass, setQrClass] = useState<ClassSession | null>(null);
+  const [rosterClass, setRosterClass] = useState<ClassSession | null>(null);
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   const sorted = [...classes].sort((a, b) => {
@@ -54,14 +115,11 @@ export default function AdminClassesScreen() {
     ? JSON.stringify({ classId: qrClass.id, courseCode: qrClass.courseCode, courseName: qrClass.courseName, token: QR_TOKEN })
     : "{}";
 
+  const rosterList: ClassAttendee[] = rosterClass ? (classAttendees[rosterClass.id] ?? []) : [];
+
   const handleToggle = (cls: ClassSession) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     toggleAttendanceOpen(cls.id);
-  };
-
-  const handleShowQR = (cls: ClassSession) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setQrClass(cls);
   };
 
   const handleShareQR = async () => {
@@ -75,6 +133,7 @@ export default function AdminClassesScreen() {
 
   const ClassCard = ({ cls }: { cls: ClassSession }) => {
     const sc = STATUS_COLORS[cls.status] ?? "#6B7280";
+    const roster = classAttendees[cls.id] ?? [];
     return (
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardTop}>
@@ -92,15 +151,18 @@ export default function AdminClassesScreen() {
             <View style={[styles.statusBadge, { backgroundColor: sc + "20" }]}>
               <Text style={[styles.statusLabel, { color: sc }]}>{STATUS_LABELS[cls.status]}</Text>
             </View>
-            <View style={styles.countRow}>
-              <Ionicons name="people-outline" size={12} color={colors.mutedForeground} />
-              <Text style={[styles.countText, { color: colors.mutedForeground }]}>{cls.attendanceCount}</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.countRow}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setRosterClass(cls); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="people-outline" size={12} color={colors.primary} />
+              <Text style={[styles.countText, { color: colors.primary }]}>{roster.length} present</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={[styles.cardActions, { borderTopColor: colors.border }]}>
-          {/* Open / Close attendance toggle */}
           <TouchableOpacity
             style={[styles.toggleBtn, { backgroundColor: cls.attendanceOpen ? "#10B98115" : colors.muted }]}
             onPress={() => handleToggle(cls)}
@@ -116,10 +178,17 @@ export default function AdminClassesScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Show QR */}
+          <TouchableOpacity
+            style={[styles.iconBtn, { backgroundColor: colors.muted }]}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setRosterClass(cls); }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="people" size={14} color={colors.mutedForeground} />
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.qrBtn, { backgroundColor: colors.primary }]}
-            onPress={() => handleShowQR(cls)}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setQrClass(cls); }}
             activeOpacity={0.85}
           >
             <Ionicons name="qr-code-outline" size={14} color="#fff" />
@@ -137,7 +206,7 @@ export default function AdminClassesScreen() {
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <Text style={styles.title}>Class Management</Text>
-        <Text style={styles.subtitle}>Generate QR codes for attendance tracking</Text>
+        <Text style={styles.subtitle}>Manage attendance and view class rosters</Text>
       </LinearGradient>
 
       <ScrollView
@@ -162,9 +231,7 @@ export default function AdminClassesScreen() {
       <Modal visible={!!qrClass} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setQrClass(null)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
-            {/* Handle */}
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-
             <Text style={[styles.modalTitle, { color: colors.foreground }]}>Attendance QR Code</Text>
             {qrClass && (
               <>
@@ -175,7 +242,6 @@ export default function AdminClassesScreen() {
                   {qrClass.date}  ·  {qrClass.startTime}–{qrClass.endTime}  ·  {qrClass.venue}
                 </Text>
 
-                {/* Status badge */}
                 <View style={[
                   styles.openBadge,
                   { backgroundColor: qrClass.attendanceOpen ? "#10B98118" : "#EF444418" }
@@ -186,18 +252,12 @@ export default function AdminClassesScreen() {
                     color={qrClass.attendanceOpen ? "#10B981" : "#EF4444"}
                   />
                   <Text style={[styles.openBadgeText, { color: qrClass.attendanceOpen ? "#10B981" : "#EF4444" }]}>
-                    {qrClass.attendanceOpen ? "Attendance is OPEN — students can scan" : "Attendance is CLOSED — open it for students to scan"}
+                    {qrClass.attendanceOpen ? "Attendance is OPEN — students can scan" : "Attendance is CLOSED"}
                   </Text>
                 </View>
 
-                {/* QR Code */}
                 <View style={[styles.qrWrap, { backgroundColor: "#fff" }]}>
-                  <QRCode
-                    value={qrValue}
-                    size={220}
-                    color="#2D1B69"
-                    backgroundColor="#fff"
-                  />
+                  <QRCode value={qrValue} size={220} color="#2D1B69" backgroundColor="#fff" />
                 </View>
 
                 <Text style={[styles.qrHint, { color: colors.mutedForeground }]}>
@@ -235,6 +295,103 @@ export default function AdminClassesScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Roster Modal */}
+      <Modal visible={!!rosterClass} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setRosterClass(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.rosterSheet, { backgroundColor: colors.card }]}>
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
+
+            {/* Header */}
+            <View style={styles.rosterHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.modalTitle, { color: colors.foreground, marginBottom: 2 }]}>
+                  Attendance Roster
+                </Text>
+                {rosterClass && (
+                  <Text style={[styles.modalCourse, { color: colors.primary }]}>
+                    {rosterClass.courseCode} — {rosterClass.courseName}
+                  </Text>
+                )}
+              </View>
+              <TouchableOpacity onPress={() => setRosterClass(null)}>
+                <Ionicons name="close" size={22} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Stats row */}
+            {rosterClass && (
+              <View style={[styles.rosterStats, { backgroundColor: colors.muted }]}>
+                <View style={styles.rosterStat}>
+                  <Text style={[styles.rosterStatVal, { color: colors.primary }]}>{rosterList.length}</Text>
+                  <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Present</Text>
+                </View>
+                <View style={[styles.rosterStatDivider, { backgroundColor: colors.border }]} />
+                <View style={styles.rosterStat}>
+                  <Text style={[styles.rosterStatVal, { color: colors.foreground }]}>{rosterClass.date}</Text>
+                  <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Date</Text>
+                </View>
+                <View style={[styles.rosterStatDivider, { backgroundColor: colors.border }]} />
+                <View style={styles.rosterStat}>
+                  <Text style={[styles.rosterStatVal, { color: colors.foreground }]}>{rosterClass.startTime}</Text>
+                  <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Start Time</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Attendance open toggle */}
+            {rosterClass && (
+              <TouchableOpacity
+                style={[
+                  styles.rosterToggle,
+                  { backgroundColor: rosterClass.attendanceOpen ? "#10B98115" : "#EF444415" },
+                ]}
+                onPress={() => {
+                  handleToggle(rosterClass);
+                  setRosterClass((prev) =>
+                    prev ? { ...prev, attendanceOpen: !prev.attendanceOpen } : null
+                  );
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={rosterClass.attendanceOpen ? "lock-open-outline" : "lock-closed-outline"}
+                  size={15}
+                  color={rosterClass.attendanceOpen ? "#10B981" : "#EF4444"}
+                />
+                <Text style={[styles.rosterToggleText, { color: rosterClass.attendanceOpen ? "#10B981" : "#EF4444" }]}>
+                  {rosterClass.attendanceOpen
+                    ? "Attendance is OPEN — tap to close"
+                    : "Attendance is CLOSED — tap to open"}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* List */}
+            {rosterList.length === 0 ? (
+              <View style={styles.rosterEmpty}>
+                <View style={[styles.rosterEmptyIcon, { backgroundColor: colors.muted }]}>
+                  <Ionicons name="people-outline" size={36} color={colors.mutedForeground} />
+                </View>
+                <Text style={[styles.rosterEmptyTitle, { color: colors.foreground }]}>No one yet</Text>
+                <Text style={[styles.rosterEmptyBody, { color: colors.mutedForeground }]}>
+                  Students who scan the QR code will appear here in real time.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {rosterList.map((item, i) => (
+                  <AttendeeRow key={item.studentId + i} item={item} index={i} />
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -256,13 +413,17 @@ const styles = StyleSheet.create({
   statusBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   statusLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   countRow: { flexDirection: "row", alignItems: "center", gap: 3 },
-  countText: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  countText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
   cardActions: { flexDirection: "row", borderTopWidth: 1, padding: 10, gap: 8 },
   toggleBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 6, paddingVertical: 8, borderRadius: 10,
   },
   toggleText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  iconBtn: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: "center", justifyContent: "center",
+  },
   qrBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
@@ -273,14 +434,18 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     padding: 24, paddingBottom: 36, alignItems: "center",
   },
-  handle: { width: 36, height: 4, borderRadius: 2, marginBottom: 20 },
+  rosterSheet: {
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 24, paddingBottom: 36,
+    maxHeight: "85%",
+  },
+  handle: { width: 36, height: 4, borderRadius: 2, marginBottom: 20, alignSelf: "center" },
   modalTitle: { fontSize: 18, fontFamily: "Inter_700Bold", marginBottom: 6 },
   modalCourse: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginBottom: 4 },
   modalMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginBottom: 12, textAlign: "center" },
   openBadge: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
-    marginBottom: 16,
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7, marginBottom: 16,
   },
   openBadgeText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   qrWrap: { borderRadius: 16, padding: 20, marginBottom: 12 },
@@ -291,4 +456,23 @@ const styles = StyleSheet.create({
     gap: 6, paddingVertical: 10, borderRadius: 12,
   },
   actionBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  rosterHeader: { flexDirection: "row", alignItems: "flex-start", marginBottom: 16 },
+  rosterStats: {
+    flexDirection: "row", borderRadius: 14, padding: 14,
+    marginBottom: 14, alignItems: "center",
+  },
+  rosterStat: { flex: 1, alignItems: "center", gap: 2 },
+  rosterStatVal: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  rosterStatLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  rosterStatDivider: { width: 1, height: 28, marginHorizontal: 4 },
+  rosterToggle: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+    marginBottom: 14,
+  },
+  rosterToggleText: { fontSize: 13, fontFamily: "Inter_600SemiBold", flex: 1 },
+  rosterEmpty: { alignItems: "center", paddingVertical: 40, gap: 12 },
+  rosterEmptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
+  rosterEmptyTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
+  rosterEmptyBody: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 18 },
 });
