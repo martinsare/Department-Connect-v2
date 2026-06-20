@@ -11,22 +11,22 @@ title = "department connect purple icon"
 id = "eD_SYL-bnwjfkhnJHCy4n"
 uri = "file://artifacts/department-connect/assets/images/onboard1.png"
 type = "image"
-title = "generated_image"
+title = "onboard1 campus connect"
 
 [[generated]]
 id = "BH9BXgYQYNyyCSdmp4JJO"
 uri = "file://artifacts/department-connect/assets/images/onboard2.png"
 type = "image"
-title = "generated_image"
+title = "onboard2 attendance tracking"
 
 [[generated]]
 id = "822heFOgDXuuw2fKpcEft"
 uri = "file://artifacts/department-connect/assets/images/onboard3.png"
 type = "image"
-title = "generated_image"
+title = "onboard3 notifications updates"
 
 [[generated]]
 id = "-nbBhvxyCqHTXZHtliN9I"
 uri = "file://artifacts/department-connect/assets/images/onboard4.png"
 type = "image"
-title = "generated_image"
+title = "onboard4 academic community"
