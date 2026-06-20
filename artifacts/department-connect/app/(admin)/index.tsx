@@ -67,6 +67,7 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { students, classes, announcements, contributions, events, addAnnouncement } = useData();
   const [showAnnounce, setShowAnnounce] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [annTitle, setAnnTitle] = useState("");
   const [annBody, setAnnBody] = useState("");
   const [annTarget, setAnnTarget] = useState("All Students");
@@ -146,7 +147,7 @@ export default function AdminDashboard() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
-            onPress={() => Alert.alert("Export", "Analytics export will open the reports screen.")}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowAnalytics(true); }}
             activeOpacity={0.8}
           >
             <Ionicons name="bar-chart-outline" size={18} color="#fff" />
@@ -236,6 +237,125 @@ export default function AdminDashboard() {
           </View>
         ))}
       </ScrollView>
+
+      {/* ── Analytics Modal ── */}
+      <Modal visible={showAnalytics} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setShowAnalytics(false)}>
+        <View style={anlStyles.overlay}>
+          <View style={[anlStyles.sheet, { backgroundColor: colors.card }]}>
+            <View style={[anlStyles.handle, { backgroundColor: colors.border }]} />
+            <View style={anlStyles.header}>
+              <Text style={[anlStyles.title, { color: colors.foreground }]}>Department Analytics</Text>
+              <TouchableOpacity onPress={() => setShowAnalytics(false)}>
+                <Ionicons name="close" size={22} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+
+              {/* Attendance */}
+              <Text style={[anlStyles.section, { color: colors.foreground }]}>Attendance Overview</Text>
+              <View style={anlStyles.metricRow}>
+                <View style={[anlStyles.metricBox, { backgroundColor: "#7C3AED15", flex: 1 }]}>
+                  <Ionicons name="people-outline" size={20} color="#7C3AED" />
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{attRate}%</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Overall rate</Text>
+                </View>
+                <View style={[anlStyles.metricBox, { backgroundColor: "#10B98115", flex: 1 }]}>
+                  <Ionicons name="checkmark-done-outline" size={20} color="#10B981" />
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{totalAttended}</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Total check-ins</Text>
+                </View>
+              </View>
+
+              {/* Per-course attendance bar chart */}
+              {classes.slice(0, 5).map((cls) => {
+                const pct = Math.min(100, Math.round((cls.attendanceCount / 25) * 100));
+                return (
+                  <View key={cls.id} style={anlStyles.barRow}>
+                    <View style={{ flex: 1 }}>
+                      <View style={anlStyles.barLabelRow}>
+                        <Text style={[anlStyles.barLabel, { color: colors.foreground }]}>{cls.courseCode}</Text>
+                        <Text style={[anlStyles.barPct, { color: colors.primary }]}>{pct}%</Text>
+                      </View>
+                      <View style={[anlStyles.barTrack, { backgroundColor: colors.muted }]}>
+                        <View style={[anlStyles.barFill, { width: `${pct}%` as any, backgroundColor: pct >= 75 ? "#10B981" : pct >= 50 ? "#F59E0B" : "#EF4444" }]} />
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+
+              {/* Financial */}
+              <Text style={[anlStyles.section, { color: colors.foreground }]}>Financial Summary</Text>
+              <View style={anlStyles.metricRow}>
+                <View style={[anlStyles.metricBox, { backgroundColor: "#10B98115", flex: 1 }]}>
+                  <Ionicons name="cash-outline" size={20} color="#10B981" />
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>₦{paidContributions.toLocaleString()}</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Collected</Text>
+                </View>
+                <View style={[anlStyles.metricBox, { backgroundColor: "#EF444415", flex: 1 }]}>
+                  <Ionicons name="card-outline" size={20} color="#EF4444" />
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>₦{(totalContributions - paidContributions).toLocaleString()}</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Outstanding</Text>
+                </View>
+              </View>
+              {/* Collection rate bar */}
+              {totalContributions > 0 && (() => {
+                const collPct = Math.round((paidContributions / totalContributions) * 100);
+                return (
+                  <View style={anlStyles.barRow}>
+                    <View style={{ flex: 1 }}>
+                      <View style={anlStyles.barLabelRow}>
+                        <Text style={[anlStyles.barLabel, { color: colors.foreground }]}>Collection Rate</Text>
+                        <Text style={[anlStyles.barPct, { color: "#10B981" }]}>{collPct}%</Text>
+                      </View>
+                      <View style={[anlStyles.barTrack, { backgroundColor: colors.muted }]}>
+                        <View style={[anlStyles.barFill, { width: `${collPct}%` as any, backgroundColor: "#10B981" }]} />
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()}
+
+              {/* Students by level */}
+              <Text style={[anlStyles.section, { color: colors.foreground }]}>Students by Level</Text>
+              {(["100L", "200L", "300L", "400L"] as const).map((lvl) => {
+                const count = students.filter((s) => s.level === lvl).length;
+                const pct = students.length ? Math.round((count / students.length) * 100) : 0;
+                return (
+                  <View key={lvl} style={anlStyles.barRow}>
+                    <View style={{ flex: 1 }}>
+                      <View style={anlStyles.barLabelRow}>
+                        <Text style={[anlStyles.barLabel, { color: colors.foreground }]}>{lvl} — {count} students</Text>
+                        <Text style={[anlStyles.barPct, { color: colors.primary }]}>{pct}%</Text>
+                      </View>
+                      <View style={[anlStyles.barTrack, { backgroundColor: colors.muted }]}>
+                        <View style={[anlStyles.barFill, { width: `${pct}%` as any, backgroundColor: colors.primary }]} />
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+
+              {/* Events summary */}
+              <Text style={[anlStyles.section, { color: colors.foreground }]}>Events</Text>
+              <View style={anlStyles.metricRow}>
+                <View style={[anlStyles.metricBox, { backgroundColor: "#F59E0B15", flex: 1 }]}>
+                  <Ionicons name="calendar-outline" size={20} color="#F59E0B" />
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{events.length}</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Total events</Text>
+                </View>
+                <View style={[anlStyles.metricBox, { backgroundColor: "#8B5CF615", flex: 1 }]}>
+                  <Ionicons name="megaphone-outline" size={20} color="#8B5CF6" />
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{announcements.length}</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Announcements</Text>
+                </View>
+              </View>
+
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={showAnnounce} transparent animationType="slide" onRequestClose={() => setShowAnnounce(false)}>
         <View style={annStyles.overlay}>
@@ -338,6 +458,25 @@ const styles = StyleSheet.create({
   annoTitle: { fontSize: 14, fontFamily: "Inter_700Bold", marginBottom: 4 },
   annoBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   annoMeta: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 6 },
+});
+
+const anlStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: "88%" },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 20 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  title: { fontSize: 20, fontFamily: "Inter_700Bold" },
+  section: { fontSize: 14, fontFamily: "Inter_700Bold", marginTop: 20, marginBottom: 12 },
+  metricRow: { flexDirection: "row", gap: 10 },
+  metricBox: { borderRadius: 14, padding: 14, gap: 4, alignItems: "flex-start" },
+  metricVal: { fontSize: 20, fontFamily: "Inter_700Bold" },
+  metricLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  barRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  barLabelRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 5 },
+  barLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  barPct: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  barTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
+  barFill: { height: 6, borderRadius: 3 },
 });
 
 const annStyles = StyleSheet.create({
