@@ -178,6 +178,15 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.registerLink}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/register"); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.registerLinkText}>New student? </Text>
+            <Text style={styles.registerLinkAccent}>Create Account</Text>
+          </TouchableOpacity>
+
           <View style={styles.demo}>
             <Text style={styles.demoTitle}>Demo Credentials  (password: "password")</Text>
             <View style={styles.demoRow}>
@@ -304,6 +313,12 @@ const styles = StyleSheet.create({
   demoChipLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: "#64748B" },
   demoChipValue: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   demoHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#CBD5E1", textAlign: "center", marginTop: 8 },
+  registerLink: {
+    flexDirection: "row", justifyContent: "center", alignItems: "center",
+    marginTop: 16, paddingVertical: 4,
+  },
+  registerLinkText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B" },
+  registerLinkAccent: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   holdingCard: {
     backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 28,

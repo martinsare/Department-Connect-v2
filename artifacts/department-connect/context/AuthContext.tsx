@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import { router } from "expo-router";
+import { registeredStudentsStore } from "./registeredStudentsStore";
 
 export type UserRole = "student" | "admin" | "developer";
 export type AdminSubRole =
@@ -260,7 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await new Promise((r) => setTimeout(r, 600));
 
       const lower = identifier.toLowerCase().trim();
-      const allUsers = [...DEMO_STUDENTS, ...adminRef.current, DEMO_DEV];
+      const allUsers = [...DEMO_STUDENTS, ...adminRef.current, DEMO_DEV, ...registeredStudentsStore];
       const found = allUsers.find(
         (u) =>
           u.matricNumber?.toLowerCase() === lower ||

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import { updateRegisteredStudentStatus } from "./registeredStudentsStore";
 
 export type StudentStatus = "active" | "pending" | "rejected" | "suspended";
 export type ClassStatus = "upcoming" | "ongoing" | "completed" | "cancelled";
@@ -656,6 +657,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setStudents((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: "active" as StudentStatus } : s))
     );
+    updateRegisteredStudentStatus(id, "active");
   };
 
   const rejectStudent = (id: string, reason: string) => {
@@ -664,6 +666,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         s.id === id ? { ...s, status: "rejected" as StudentStatus, rejectionReason: reason } : s
       )
     );
+    updateRegisteredStudentStatus(id, "rejected");
   };
 
   const markAttendance = (classId: string, attendee: ClassAttendee) => {
