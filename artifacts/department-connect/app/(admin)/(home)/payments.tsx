@@ -482,43 +482,21 @@ export default function AdminPaymentsScreen() {
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + (Platform.OS === "web" ? 84 : 100) }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Pending review section */}
-        {pendingItems.length > 0 && (
-          <View style={s.section}>
-            <View style={s.sectionHeader}>
-              <View style={[s.sectionDot, { backgroundColor: "#7C3AED" }]} />
-              <Text style={[s.sectionTitle, { color: colors.foreground }]}>Pending Review ({pendingItems.length})</Text>
-            </View>
-            {pendingItems.map(item => (
-              <ContributionItem
-                key={item.id}
-                item={item}
-                onConfirm={() => {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  confirmPayment(item.id);
-                }}
-                onReject={() => setRejectingItem(item)}
-              />
-            ))}
+        {filtered.length === 0 ? (
+          <View style={s.empty}>
+            <Ionicons name="card-outline" size={40} color={colors.mutedForeground} />
+            <Text style={[s.emptyText, { color: colors.mutedForeground }]}>No contributions yet</Text>
+            <TouchableOpacity style={[s.emptyBtn, { backgroundColor: colors.primary }]} onPress={() => setShowCreate(true)} activeOpacity={0.85}>
+              <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 }}>Create First Contribution</Text>
+            </TouchableOpacity>
           </View>
-        )}
-
-        {/* All contributions */}
-        <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <View style={[s.sectionDot, { backgroundColor: colors.mutedForeground }]} />
-            <Text style={[s.sectionTitle, { color: colors.foreground }]}>All Contributions ({filtered.length})</Text>
-          </View>
-          {filtered.length === 0 ? (
-            <View style={s.empty}>
-              <Ionicons name="card-outline" size={40} color={colors.mutedForeground} />
-              <Text style={[s.emptyText, { color: colors.mutedForeground }]}>No contributions yet</Text>
-              <TouchableOpacity style={[s.emptyBtn, { backgroundColor: colors.primary }]} onPress={() => setShowCreate(true)} activeOpacity={0.85}>
-                <Text style={{ color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 }}>Create First Contribution</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            filtered.map(item => (
+        ) : (
+          [...filtered]
+            .sort((a, b) => {
+              const order = { pending: 0, unpaid: 1, rejected: 2, confirmed: 3 };
+              return order[a.status] - order[b.status];
+            })
+            .map(item => (
               <ContributionItem
                 key={item.id}
                 item={item}
@@ -526,8 +504,7 @@ export default function AdminPaymentsScreen() {
                 onReject={() => setRejectingItem(item)}
               />
             ))
-          )}
-        </View>
+        )}
       </ScrollView>
 
       {showCreate && (
