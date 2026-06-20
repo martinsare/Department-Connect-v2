@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
   Image,
   Platform,
   StyleSheet,
@@ -11,17 +10,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Path, Ellipse } from "react-native-svg";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useAuth } from "@/context/AuthContext";
-import { LinearGradient } from "expo-linear-gradient";
 import { PendingAnimation, RejectedAnimation } from "@/components/AnimatedStatus";
-
-const { width: W } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -32,18 +28,10 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [holdingState, setHoldingState] = useState<"pending" | "rejected" | null>(null);
 
-  const logoScale = useRef(new Animated.Value(0.7)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const formOpacity = useRef(new Animated.Value(0)).current;
-  const formTranslate = useRef(new Animated.Value(20)).current;
+  const fadeIn = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(logoScale, { toValue: 1, useNativeDriver: false, tension: 60, friction: 7 }),
-      Animated.timing(logoOpacity, { toValue: 1, duration: 500, useNativeDriver: false }),
-      Animated.timing(formOpacity, { toValue: 1, duration: 600, useNativeDriver: false, delay: 200 }),
-      Animated.timing(formTranslate, { toValue: 0, duration: 500, useNativeDriver: false, delay: 200 }),
-    ]).start();
+    Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: false }).start();
   }, []);
 
   const handleLogin = async () => {
@@ -88,152 +76,130 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={[styles.root, { paddingTop: topPad }]}>
-      {/* Wave header */}
-      <View style={styles.waveContainer}>
-        <Svg width={W} height={220} viewBox={`0 0 ${W} 220`} style={StyleSheet.absoluteFill}>
-          <Path
-            d={`M0,0 L${W},0 L${W},140 Q${W * 0.75},200 ${W * 0.5},160 Q${W * 0.25},120 0,175 Z`}
-            fill="#2D1B69"
-          />
-          <Path
-            d={`M0,0 L${W},0 L${W},120 Q${W * 0.75},175 ${W * 0.5},138 Q${W * 0.25},100 0,155 Z`}
-            fill="#7C3AED"
-            opacity={0.55}
-          />
-          <Ellipse cx={W * 0.85} cy={30} rx={60} ry={55} fill="#9F67FF" opacity={0.18} />
-          <Ellipse cx={W * 0.1} cy={15} rx={45} ry={40} fill="#6D28D9" opacity={0.22} />
-        </Svg>
-
-        {/* Logo centred on wave */}
-        <Animated.View style={[styles.logoWrap, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
-          <View style={styles.logoOuter}>
+    <Animated.View style={[styles.root, { paddingTop: topPad, opacity: fadeIn }]}>
+      <KeyboardAwareScrollViewCompat
+        contentContainerStyle={[styles.scroll, { paddingBottom: botPad }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Logo */}
+        <View style={styles.logoWrap}>
+          <View style={styles.logoRing}>
             <View style={styles.logoCircle}>
               <Image source={require("../assets/images/icon.png")} style={styles.logo} resizeMode="cover" />
             </View>
           </View>
           <Text style={styles.appName}>Department Connect</Text>
           <Text style={styles.tagline}>Your Academic Community</Text>
-        </Animated.View>
-      </View>
+        </View>
 
-      {/* Form */}
-      <KeyboardAwareScrollViewCompat
-        contentContainerStyle={[styles.formScroll, { paddingBottom: botPad }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View style={{ opacity: formOpacity, transform: [{ translateY: formTranslate }] }}>
-          <Text style={styles.formHeading}>Welcome back 👋</Text>
-          <Text style={styles.formSub}>Sign in to access your dashboard</Text>
+        {/* Form */}
+        <Text style={styles.heading}>Welcome back 👋</Text>
+        <Text style={styles.sub}>Sign in to access your dashboard</Text>
 
-          {!!error && (
-            <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle-outline" size={15} color="#DC2626" />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          <Text style={styles.label}>Matric Number or Surname</Text>
-          <View style={styles.inputRow}>
-            <Ionicons name="person-outline" size={18} color="#A78BFA" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. ART2500001 or Adeyemi"
-              placeholderTextColor="#CBD5E1"
-              value={identifier}
-              onChangeText={setIdentifier}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="next"
-            />
+        {!!error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle-outline" size={15} color="#DC2626" />
+            <Text style={styles.errorText}>{error}</Text>
           </View>
+        )}
 
-          <View style={styles.labelRow}>
-            <Text style={styles.label}>Password</Text>
-            <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/forgot-password"); }} activeOpacity={0.7}>
-              <Text style={styles.forgotLink}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.inputRow}>
-            <Ionicons name="lock-closed-outline" size={18} color="#A78BFA" style={styles.inputIcon} />
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="Enter password"
-              placeholderTextColor="#CBD5E1"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-              onSubmitEditing={handleLogin}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(p => !p)} style={styles.eyeBtn} activeOpacity={0.7}>
-              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#94A3B8" />
-            </TouchableOpacity>
-          </View>
+        <Text style={styles.label}>Matric Number or Surname</Text>
+        <View style={styles.inputRow}>
+          <Ionicons name="person-outline" size={17} color="#A78BFA" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. ART2500001 or Adeyemi"
+            placeholderTextColor="#CBD5E1"
+            value={identifier}
+            onChangeText={setIdentifier}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="next"
+          />
+        </View>
 
-          <TouchableOpacity style={[styles.btn, isLoading && { opacity: 0.6 }]} onPress={handleLogin} disabled={isLoading} activeOpacity={0.85}>
-            <LinearGradient colors={["#7C3AED", "#5B21B6"]} style={styles.btnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-              {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Sign In</Text>}
-            </LinearGradient>
+        <View style={styles.labelRow}>
+          <Text style={styles.label}>Password</Text>
+          <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/forgot-password"); }} activeOpacity={0.7}>
+            <Text style={styles.forgotLink}>Forgot Password?</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.altLink} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/register"); }} activeOpacity={0.7}>
-            <Text style={styles.altLinkText}>New student? </Text>
-            <Text style={styles.altLinkAccent}>Create Account</Text>
+        </View>
+        <View style={styles.inputRow}>
+          <Ionicons name="lock-closed-outline" size={17} color="#A78BFA" style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            placeholder="Enter password"
+            placeholderTextColor="#CBD5E1"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="done"
+            onSubmitEditing={handleLogin}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(p => !p)} style={styles.eyeBtn} activeOpacity={0.7}>
+            <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#94A3B8" />
           </TouchableOpacity>
+        </View>
 
-          <View style={styles.demo}>
-            <Text style={styles.demoTitle}>Demo Credentials (password: "password")</Text>
-            <View style={styles.demoRow}>
-              {[
-                { role: "Student", hint: "Adeyemi", icon: "school-outline" as const },
-                { role: "Admin", hint: "Ibrahim", icon: "shield-checkmark-outline" as const },
-                { role: "Dev", hint: "Martins", icon: "code-slash-outline" as const },
-              ].map(d => (
-                <TouchableOpacity key={d.role} style={styles.demoChip} activeOpacity={0.8}
-                  onPress={() => { setIdentifier(d.hint); setPassword("password"); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                  <Ionicons name={d.icon} size={16} color="#7C3AED" />
-                  <Text style={styles.demoChipLabel}>{d.role}</Text>
-                  <Text style={styles.demoChipValue}>{d.hint}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.demoHint}>Tap any chip to auto-fill</Text>
+        <TouchableOpacity style={[styles.btn, isLoading && { opacity: 0.6 }]} onPress={handleLogin} disabled={isLoading} activeOpacity={0.85}>
+          <LinearGradient colors={["#7C3AED", "#5B21B6"]} style={styles.btnGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+            {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Sign In</Text>}
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.altLink} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/register"); }} activeOpacity={0.7}>
+          <Text style={styles.altLinkText}>New student? </Text>
+          <Text style={styles.altLinkAccent}>Create Account</Text>
+        </TouchableOpacity>
+
+        <View style={styles.demo}>
+          <Text style={styles.demoTitle}>Demo Credentials (password: "password")</Text>
+          <View style={styles.demoRow}>
+            {[
+              { role: "Student", hint: "Adeyemi", icon: "school-outline" as const },
+              { role: "Admin", hint: "Ibrahim", icon: "shield-checkmark-outline" as const },
+              { role: "Dev", hint: "Martins", icon: "code-slash-outline" as const },
+            ].map(d => (
+              <TouchableOpacity key={d.role} style={styles.demoChip} activeOpacity={0.8}
+                onPress={() => { setIdentifier(d.hint); setPassword("password"); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                <Ionicons name={d.icon} size={16} color="#7C3AED" />
+                <Text style={styles.demoChipLabel}>{d.role}</Text>
+                <Text style={styles.demoChipValue}>{d.hint}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        </Animated.View>
+          <Text style={styles.demoHint}>Tap any chip to auto-fill</Text>
+        </View>
       </KeyboardAwareScrollViewCompat>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#FAFAFA" },
+  root: { flex: 1, backgroundColor: "#fff" },
+  scroll: { flexGrow: 1, paddingHorizontal: 24 },
 
-  waveContainer: { width: "100%", height: 220, marginBottom: 8 },
-
-  logoWrap: { alignItems: "center", paddingTop: 20 },
-  logoOuter: {
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.5)",
+  logoWrap: { alignItems: "center", paddingTop: 24, marginBottom: 28 },
+  logoRing: {
+    width: 96, height: 96, borderRadius: 48,
+    backgroundColor: "#F3EEFF",
+    borderWidth: 2, borderColor: "#DDD6FE",
     alignItems: "center", justifyContent: "center",
-    marginBottom: 10,
+    marginBottom: 14,
   },
   logoCircle: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: "#fff",
+    width: 76, height: 76, borderRadius: 38,
     overflow: "hidden", alignItems: "center", justifyContent: "center",
   },
-  logo: { width: 64, height: 64, borderRadius: 14 },
-  appName: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#fff", letterSpacing: -0.3 },
-  tagline: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)", marginTop: 2 },
+  logo: { width: 76, height: 76 },
+  appName: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#1E1B4B", letterSpacing: -0.3 },
+  tagline: { fontSize: 13, fontFamily: "Inter_400Regular", color: "#94A3B8", marginTop: 3 },
 
-  formScroll: { flexGrow: 1, paddingHorizontal: 24 },
-  formHeading: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#1E1B4B", marginBottom: 4 },
-  formSub: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B", marginBottom: 20 },
+  heading: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#1E1B4B", marginBottom: 4 },
+  sub: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B", marginBottom: 22 },
 
   errorBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,
@@ -243,21 +209,17 @@ const styles = StyleSheet.create({
   errorText: { color: "#DC2626", fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
 
   label: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#374151", marginBottom: 8 },
-  labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16, marginBottom: 8 },
+  labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 14, marginBottom: 8 },
   forgotLink: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
 
   inputRow: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#fff", borderRadius: 14,
+    backgroundColor: "#FAFAFA", borderRadius: 14,
     borderWidth: 1.5, borderColor: "#E8E0FF",
-    paddingHorizontal: 14, paddingVertical: 2,
-    marginBottom: 4,
+    paddingHorizontal: 14, paddingVertical: 2, marginBottom: 4,
   },
   inputIcon: { marginRight: 10 },
-  input: {
-    flex: 1, fontSize: 15, fontFamily: "Inter_400Regular",
-    color: "#1E1B4B", paddingVertical: 13,
-  },
+  input: { flex: 1, fontSize: 15, fontFamily: "Inter_400Regular", color: "#1E1B4B", paddingVertical: 13 },
   eyeBtn: { padding: 4 },
 
   btn: { marginTop: 22, borderRadius: 16, overflow: "hidden" },

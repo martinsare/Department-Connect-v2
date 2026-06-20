@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Platform,
   StyleSheet,
   Text,
@@ -9,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Path, Ellipse } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,8 +15,6 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { SuccessAnimation } from "@/components/AnimatedStatus";
-
-const { width: W } = Dimensions.get("window");
 
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
@@ -71,44 +67,25 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: topPad }]}>
-      {/* Wave header */}
-      <View style={styles.waveContainer}>
-        <Svg width={W} height={200} viewBox={`0 0 ${W} 200`} style={StyleSheet.absoluteFill}>
-          <Path
-            d={`M0,0 L${W},0 L${W},130 Q${W * 0.75},185 ${W * 0.5},148 Q${W * 0.25},110 0,160 Z`}
-            fill="#2D1B69"
-          />
-          <Path
-            d={`M0,0 L${W},0 L${W},110 Q${W * 0.75},160 ${W * 0.5},126 Q${W * 0.25},92 0,140 Z`}
-            fill="#7C3AED"
-            opacity={0.55}
-          />
-          <Ellipse cx={W * 0.88} cy={25} rx={50} ry={45} fill="#9F67FF" opacity={0.18} />
-          <Ellipse cx={W * 0.08} cy={12} rx={40} ry={35} fill="#6D28D9" opacity={0.22} />
-        </Svg>
-
-        {/* Back button on wave */}
-        <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.7}>
-          <View style={styles.backCircle}>
-            <Ionicons name="arrow-back" size={18} color="#fff" />
-          </View>
-        </TouchableOpacity>
-
-        {/* Hero icon on wave */}
-        <View style={styles.heroIconWrap}>
-          <View style={styles.heroIconOuter}>
-            <View style={styles.heroIconInner}>
-              <Ionicons name="lock-open-outline" size={28} color="#7C3AED" />
-            </View>
-          </View>
-        </View>
-      </View>
-
       <KeyboardAwareScrollViewCompat
-        contentContainerStyle={[styles.formScroll, { paddingBottom: botPad }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: botPad }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Back */}
+        <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.7}>
+          <View style={styles.backCircle}>
+            <Ionicons name="arrow-back" size={18} color="#7C3AED" />
+          </View>
+        </TouchableOpacity>
+
+        {/* Icon */}
+        <View style={styles.iconWrap}>
+          <View style={styles.iconRing}>
+            <Ionicons name="lock-open-outline" size={30} color="#7C3AED" />
+          </View>
+        </View>
+
         <Text style={styles.heading}>Forgot Password?</Text>
         <Text style={styles.sub}>Enter your details and we'll send you reset instructions.</Text>
 
@@ -121,7 +98,7 @@ export default function ForgotPasswordScreen() {
 
         <Text style={styles.label}>Matric Number, Staff ID, or Email</Text>
         <View style={styles.inputRow}>
-          <Ionicons name="mail-outline" size={18} color="#A78BFA" style={styles.inputIcon} />
+          <Ionicons name="mail-outline" size={17} color="#A78BFA" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="e.g. ART2500001 or you@example.com"
@@ -158,33 +135,27 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#FAFAFA" },
+  root: { flex: 1, backgroundColor: "#fff" },
+  scroll: { flexGrow: 1, paddingHorizontal: 24 },
 
-  waveContainer: { width: "100%", height: 200 },
-  backLink: { position: "absolute", top: 16, left: 20 },
+  backLink: { alignSelf: "flex-start", marginBottom: 28, marginTop: 8 },
   backCircle: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.35)",
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "#F3EEFF",
+    borderWidth: 1.5, borderColor: "#DDD6FE",
     alignItems: "center", justifyContent: "center",
   },
 
-  heroIconWrap: { alignItems: "center", marginTop: 56 },
-  heroIconOuter: {
+  iconWrap: { alignItems: "center", marginBottom: 24 },
+  iconRing: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.45)",
-    alignItems: "center", justifyContent: "center",
-  },
-  heroIconInner: {
-    width: 62, height: 62, borderRadius: 31,
-    backgroundColor: "#fff",
+    backgroundColor: "#F3EEFF",
+    borderWidth: 2, borderColor: "#DDD6FE",
     alignItems: "center", justifyContent: "center",
   },
 
-  formScroll: { flexGrow: 1, paddingHorizontal: 24 },
-  heading: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#1E1B4B", marginBottom: 6, marginTop: 20 },
-  sub: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B", marginBottom: 24, lineHeight: 21 },
+  heading: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#1E1B4B", marginBottom: 8 },
+  sub: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B", marginBottom: 28, lineHeight: 22 },
 
   errorBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,
@@ -196,7 +167,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#374151", marginBottom: 8 },
   inputRow: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#fff", borderRadius: 14,
+    backgroundColor: "#FAFAFA", borderRadius: 14,
     borderWidth: 1.5, borderColor: "#E8E0FF",
     paddingHorizontal: 14, paddingVertical: 2, marginBottom: 4,
   },

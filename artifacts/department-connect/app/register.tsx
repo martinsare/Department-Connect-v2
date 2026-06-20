@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Modal,
   Platform,
   ScrollView,
@@ -11,41 +10,22 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Path, Ellipse } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useData } from "@/context/DataContext";
 import { addRegisteredStudent } from "@/context/registeredStudentsStore";
-
-import {
-  addRegisteredTeacher,
-  registeredTeachersStore,
-} from "@/context/registeredTeachersStore";
+import { addRegisteredTeacher, registeredTeachersStore } from "@/context/registeredTeachersStore";
 import { SuccessAnimation } from "@/components/AnimatedStatus";
-
-const { width: W } = Dimensions.get("window");
 
 const LEVELS = ["100L", "200L", "300L", "400L", "500L"];
 const DEPARTMENTS = [
-  "Computer Science",
-  "Mathematics",
-  "Physics",
-  "Chemistry",
-  "Biology",
-  "Economics",
-  "Accounting",
-  "Business Administration",
-  "Electrical Engineering",
-  "Mechanical Engineering",
-  "Civil Engineering",
-  "Law",
-  "Medicine & Surgery",
-  "Nursing Science",
-  "Mass Communication",
+  "Computer Science", "Mathematics", "Physics", "Chemistry", "Biology",
+  "Economics", "Accounting", "Business Administration",
+  "Electrical Engineering", "Mechanical Engineering", "Civil Engineering",
+  "Law", "Medicine & Surgery", "Nursing Science", "Mass Communication",
 ];
 
 type Role = "student" | "teacher";
@@ -54,10 +34,9 @@ type DoneType = "student" | "teacher";
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const { students, addStudent } = useData();
-
   const [role, setRole] = useState<Role>("student");
 
-  /* ── Student fields ── */
+  /* Student fields */
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [matric, setMatric] = useState("");
@@ -72,7 +51,7 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  /* ── Admin fields ── */
+  /* Admin fields */
   const [tFirstName, setTFirstName] = useState("");
   const [tSurname, setTSurname] = useState("");
   const [tStaffId, setTStaffId] = useState("");
@@ -99,7 +78,6 @@ export default function RegisterScreen() {
     setError("");
   };
 
-  /* ── Student submit ── */
   const handleStudentRegister = async () => {
     setError("");
     if (!firstName.trim()) return setError("First name is required.");
@@ -112,44 +90,26 @@ export default function RegisterScreen() {
     if (!password) return setError("Password is required.");
     if (password.length < 6) return setError("Password must be at least 6 characters.");
     if (password !== confirmPassword) return setError("Passwords do not match.");
-
     const matricNorm = matric.trim().toUpperCase();
-    if (students.some((s) => s.matricNumber.toUpperCase() === matricNorm)) {
+    if (students.some(s => s.matricNumber.toUpperCase() === matricNorm))
       return setError("A student with this matric number already exists. Please contact Admin.");
-    }
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-
+    await new Promise(r => setTimeout(r, 800));
     const id = `reg_${Date.now()}`;
-    const submittedAt = new Date().toISOString();
-
     const newStudent = {
-      id,
-      firstName: firstName.trim(),
-      surname: surname.trim(),
-      matricNumber: matricNorm,
-      level,
-      department,
-      phone: phone.trim(),
-      email: email.trim(),
-      dob: dob.trim(),
-      status: "pending" as const,
-      submittedAt,
-      birthdayPrivacy: false,
-      hideYear: false,
+      id, firstName: firstName.trim(), surname: surname.trim(),
+      matricNumber: matricNorm, level, department, phone: phone.trim(),
+      email: email.trim(), dob: dob.trim(), status: "pending" as const,
+      submittedAt: new Date().toISOString(), birthdayPrivacy: false, hideYear: false,
     };
-
     addStudent(newStudent);
     addRegisteredStudent({ ...newStudent, role: "student", password });
-
     setLoading(false);
     setDone("student");
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  /* ── Teacher submit ── */
   const handleTeacherRegister = async () => {
     setError("");
     if (!tFirstName.trim()) return setError("First name is required.");
@@ -159,52 +119,31 @@ export default function RegisterScreen() {
     if (!tPassword) return setError("Password is required.");
     if (tPassword.length < 6) return setError("Password must be at least 6 characters.");
     if (tPassword !== tConfirmPassword) return setError("Passwords do not match.");
-
     const staffIdNorm = tStaffId.trim().toUpperCase();
-    if (registeredTeachersStore.some((t) => t.staffId.toUpperCase() === staffIdNorm)) {
+    if (registeredTeachersStore.some(t => t.staffId.toUpperCase() === staffIdNorm))
       return setError("A teacher with this Staff ID already submitted a request.");
-    }
-
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-
+    await new Promise(r => setTimeout(r, 900));
     addRegisteredTeacher({
-      id: `treg_${Date.now()}`,
-      firstName: tFirstName.trim(),
-      surname: tSurname.trim(),
-      role: "admin",
-      subRole: tSubRole,
-      staffId: staffIdNorm,
-      department: tDepartment,
-      phone: tPhone.trim(),
-      email: tEmail.trim(),
-      dob: "",
-      status: "pending",
-      password: tPassword,
-      submittedAt: new Date().toISOString(),
-      birthdayPrivacy: false,
-      hideYear: false,
+      id: `treg_${Date.now()}`, firstName: tFirstName.trim(), surname: tSurname.trim(),
+      role: "admin", subRole: tSubRole, staffId: staffIdNorm, department: tDepartment,
+      phone: tPhone.trim(), email: tEmail.trim(), dob: "", status: "pending",
+      password: tPassword, submittedAt: new Date().toISOString(), birthdayPrivacy: false, hideYear: false,
     });
-
     setLoading(false);
     setDone("teacher");
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  /* ── Success screen ── */
+  /* Success screen */
   if (done) {
     const isTeacher = done === "teacher";
     return (
-      <LinearGradient
-        colors={["#0D0720", "#2D1B69", "#4C1D95"]}
-        style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}
-      >
+      <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
         <View style={styles.successCard}>
           <SuccessAnimation />
-          <Text style={styles.successTitle}>
-            {isTeacher ? "Application Submitted!" : "Registration Submitted!"}
-          </Text>
+          <Text style={styles.successTitle}>{isTeacher ? "Application Submitted!" : "Registration Submitted!"}</Text>
           <Text style={styles.successBody}>
             {isTeacher
               ? "Your admin application is now pending review by the Super Admin. You'll be able to log in once approved."
@@ -212,17 +151,11 @@ export default function RegisterScreen() {
           </Text>
           {isTeacher && (
             <View style={styles.infoNote}>
-              <Ionicons name="shield-checkmark-outline" size={16} color="#7C3AED" />
-              <Text style={styles.infoNoteText}>
-                Super Admin will review your credentials and approve or reject your admin account.
-              </Text>
+              <Ionicons name="shield-checkmark-outline" size={16} color="#A78BFA" />
+              <Text style={styles.infoNoteText}>Super Admin will review your credentials and approve or reject your admin account.</Text>
             </View>
           )}
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.replace("/login")}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace("/login")} activeOpacity={0.85}>
             <Ionicons name="arrow-back" size={16} color="#fff" />
             <Text style={styles.backBtnText}>Back to Login</Text>
           </TouchableOpacity>
@@ -233,30 +166,21 @@ export default function RegisterScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: topPad }]}>
-      {/* Wave header */}
-      <View style={styles.waveContainer}>
-        <Svg width={W} height={190} viewBox={`0 0 ${W} 190`} style={StyleSheet.absoluteFill}>
-          <Path d={`M0,0 L${W},0 L${W},125 Q${W*0.75},178 ${W*0.5},142 Q${W*0.25},106 0,155 Z`} fill="#2D1B69" />
-          <Path d={`M0,0 L${W},0 L${W},105 Q${W*0.75},153 ${W*0.5},120 Q${W*0.25},87 0,132 Z`} fill="#7C3AED" opacity={0.5} />
-          <Ellipse cx={W*0.87} cy={28} rx={55} ry={48} fill="#9F67FF" opacity={0.18} />
-          <Ellipse cx={W*0.1} cy={14} rx={42} ry={37} fill="#6D28D9" opacity={0.22} />
-        </Svg>
-
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.7}>
           <View style={styles.backCircle}>
-            <Ionicons name="arrow-back" size={18} color="#fff" />
+            <Ionicons name="arrow-back" size={18} color="#7C3AED" />
           </View>
         </TouchableOpacity>
 
-        <View style={styles.waveHero}>
-          <View style={styles.heroIconOuter}>
-            <View style={styles.heroIconInner}>
-              <Ionicons name="person-add-outline" size={26} color="#7C3AED" />
-            </View>
+        <View style={styles.iconWrap}>
+          <View style={styles.iconRing}>
+            <Ionicons name="person-add-outline" size={28} color="#7C3AED" />
           </View>
-          <Text style={styles.heroTitle}>Create Account</Text>
-          <Text style={styles.heroSub}>Fill in your details to request access</Text>
         </View>
+        <Text style={styles.heading}>Create Account</Text>
+        <Text style={styles.sub}>Fill in your details to request access</Text>
       </View>
 
       {/* Role toggle */}
@@ -276,7 +200,7 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Student form ── */}
+        {/* Student form */}
         {role === "student" && (
           <View>
             {!!error && (
@@ -285,200 +209,79 @@ export default function RegisterScreen() {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
-
-            {/* Name row */}
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>First Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Tolu"
-                  placeholderTextColor="#94A3B8"
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
+                <TextInput style={styles.input} placeholder="e.g. Tolu" placeholderTextColor="#CBD5E1" value={firstName} onChangeText={setFirstName} autoCapitalize="words" autoCorrect={false} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Surname *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Adeyemi"
-                  placeholderTextColor="#94A3B8"
-                  value={surname}
-                  onChangeText={setSurname}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
+                <TextInput style={styles.input} placeholder="e.g. Adeyemi" placeholderTextColor="#CBD5E1" value={surname} onChangeText={setSurname} autoCapitalize="words" autoCorrect={false} />
               </View>
             </View>
 
-            {/* Matric */}
             <Text style={[styles.label, { marginTop: 14 }]}>Matric Number *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. ART2500027"
-              placeholderTextColor="#94A3B8"
-              value={matric}
-              onChangeText={setMatric}
-              autoCapitalize="characters"
-              autoCorrect={false}
-            />
+            <TextInput style={styles.input} placeholder="e.g. ART2500027" placeholderTextColor="#CBD5E1" value={matric} onChangeText={setMatric} autoCapitalize="characters" autoCorrect={false} />
 
-            {/* Department dropdown */}
             <Text style={[styles.label, { marginTop: 14 }]}>Department *</Text>
-            <TouchableOpacity
-              style={[styles.input, styles.dropdownBtn]}
-              onPress={() => { setShowDeptPicker(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.dropdownBtnText, !department && { color: "#94A3B8" }]}>
-                {department || "Select your department"}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color="#94A3B8" />
+            <TouchableOpacity style={[styles.input, styles.dropdownBtn]} onPress={() => { setShowDeptPicker(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} activeOpacity={0.8}>
+              <Text style={[styles.dropdownBtnText, !department && { color: "#CBD5E1" }]}>{department || "Select your department"}</Text>
+              <Ionicons name="chevron-down" size={16} color="#A78BFA" />
             </TouchableOpacity>
 
-            {/* Level */}
             <Text style={[styles.label, { marginTop: 14 }]}>Level *</Text>
             <View style={styles.levelRow}>
-              {LEVELS.map((l) => (
-                <TouchableOpacity
-                  key={l}
-                  style={[styles.levelChip, level === l && styles.levelChipActive]}
-                  onPress={() => { setLevel(l); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.levelChipText, level === l && styles.levelChipTextActive]}>
-                    {l}
-                  </Text>
+              {LEVELS.map(l => (
+                <TouchableOpacity key={l} style={[styles.levelChip, level === l && styles.levelChipActive]} onPress={() => { setLevel(l); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} activeOpacity={0.7}>
+                  <Text style={[styles.levelChipText, level === l && styles.levelChipTextActive]}>{l}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Date of Birth */}
             <Text style={[styles.label, { marginTop: 14 }]}>Date of Birth *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="DD/MM/YYYY"
-              placeholderTextColor="#94A3B8"
-              value={dob}
-              onChangeText={(t) => {
-                let clean = t.replace(/[^0-9]/g, "");
-                if (clean.length > 2) clean = clean.slice(0, 2) + "/" + clean.slice(2);
-                if (clean.length > 5) clean = clean.slice(0, 5) + "/" + clean.slice(5);
-                if (clean.length > 10) clean = clean.slice(0, 10);
-                setDob(clean);
-              }}
-              keyboardType="number-pad"
-              maxLength={10}
-            />
+            <TextInput style={styles.input} placeholder="DD/MM/YYYY" placeholderTextColor="#CBD5E1" value={dob} onChangeText={t => { let c = t.replace(/[^0-9]/g, ""); if (c.length > 2) c = c.slice(0,2)+"/"+c.slice(2); if (c.length > 5) c = c.slice(0,5)+"/"+c.slice(5); setDob(c.slice(0,10)); }} keyboardType="number-pad" maxLength={10} />
 
-            {/* Phone */}
             <Text style={[styles.label, { marginTop: 14 }]}>Phone</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 08012345678"
-              placeholderTextColor="#94A3B8"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-            />
+            <TextInput style={styles.input} placeholder="e.g. 08012345678" placeholderTextColor="#CBD5E1" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
 
-            {/* Email — required */}
             <Text style={[styles.label, { marginTop: 14 }]}>Email Address *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. tolu@example.com"
-              placeholderTextColor="#94A3B8"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <TextInput style={styles.input} placeholder="e.g. tolu@example.com" placeholderTextColor="#CBD5E1" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
 
-            {/* Password */}
             <Text style={[styles.label, { marginTop: 14 }]}>Password *</Text>
             <View style={[styles.input, styles.inputRow]}>
-              <TextInput
-                style={{ flex: 1, fontSize: 15, color: "#0F172A", fontFamily: "Inter_400Regular" }}
-                placeholder="Min. 6 characters"
-                placeholderTextColor="#94A3B8"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity onPress={() => setShowPassword((p) => !p)} style={styles.eyeBtn}>
-                <Text style={styles.eyeIcon}>{showPassword ? "🙈" : "👁"}</Text>
+              <TextInput style={{ flex: 1, fontSize: 15, color: "#1E1B4B", fontFamily: "Inter_400Regular" }} placeholder="Min. 6 characters" placeholderTextColor="#CBD5E1" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} autoCapitalize="none" autoCorrect={false} />
+              <TouchableOpacity onPress={() => setShowPassword(p => !p)} style={styles.eyeBtn} activeOpacity={0.7}>
+                <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            {/* Confirm password */}
             <Text style={[styles.label, { marginTop: 14 }]}>Confirm Password *</Text>
             <View style={[styles.input, styles.inputRow]}>
-              <TextInput
-                style={{ flex: 1, fontSize: 15, color: "#0F172A", fontFamily: "Inter_400Regular" }}
-                placeholder="Re-enter password"
-                placeholderTextColor="#94A3B8"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirm}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity onPress={() => setShowConfirm((p) => !p)} style={styles.eyeBtn}>
-                <Text style={styles.eyeIcon}>{showConfirm ? "🙈" : "👁"}</Text>
+              <TextInput style={{ flex: 1, fontSize: 15, color: "#1E1B4B", fontFamily: "Inter_400Regular" }} placeholder="Re-enter password" placeholderTextColor="#CBD5E1" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirm} autoCapitalize="none" autoCorrect={false} />
+              <TouchableOpacity onPress={() => setShowConfirm(p => !p)} style={styles.eyeBtn} activeOpacity={0.7}>
+                <Ionicons name={showConfirm ? "eye-off-outline" : "eye-outline"} size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.submitBtn, loading && { opacity: 0.6 }]}
-              onPress={handleStudentRegister}
-              disabled={loading}
-              activeOpacity={0.85}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
-                  <Text style={styles.submitBtnText}>Submit Registration</Text>
-                </>
-              )}
+            <TouchableOpacity style={[styles.submitBtn, loading && { opacity: 0.6 }]} onPress={handleStudentRegister} disabled={loading} activeOpacity={0.85}>
+              <LinearGradient colors={["#7C3AED", "#5B21B6"]} style={styles.submitGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                {loading ? <ActivityIndicator color="#fff" /> : (<><Ionicons name="checkmark-circle-outline" size={18} color="#fff" /><Text style={styles.submitBtnText}>Submit Registration</Text></>)}
+              </LinearGradient>
             </TouchableOpacity>
-
-            <Text style={styles.note}>
-              Your account will be reviewed by Admin before you can log in.
-            </Text>
+            <Text style={styles.note}>Your account will be reviewed by Admin before you can log in.</Text>
           </View>
         )}
 
-        {/* Student department picker modal */}
-        <Modal
-          visible={showDeptPicker}
-          transparent
-          animationType="slide"
-          statusBarTranslucent
-          onRequestClose={() => setShowDeptPicker(false)}
-        >
+        {/* Student dept picker */}
+        <Modal visible={showDeptPicker} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setShowDeptPicker(false)}>
           <View style={styles.modalBackdrop}>
             <View style={styles.pickerSheet}>
               <View style={styles.pickerHandle} />
               <Text style={styles.pickerTitle}>Select Department</Text>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
-                {DEPARTMENTS.map((dept) => (
-                  <TouchableOpacity
-                    key={dept}
-                    style={[styles.pickerItem, department === dept && styles.pickerItemActive]}
-                    onPress={() => { setDepartment(dept); setShowDeptPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.pickerItemText, department === dept && styles.pickerItemTextActive]}>
-                      {dept}
-                    </Text>
+                {DEPARTMENTS.map(dept => (
+                  <TouchableOpacity key={dept} style={[styles.pickerItem, department === dept && styles.pickerItemActive]} onPress={() => { setDepartment(dept); setShowDeptPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} activeOpacity={0.7}>
+                    <Text style={[styles.pickerItemText, department === dept && styles.pickerItemTextActive]}>{dept}</Text>
                     {department === dept && <Ionicons name="checkmark" size={18} color="#7C3AED" />}
                   </TouchableOpacity>
                 ))}
@@ -490,29 +293,16 @@ export default function RegisterScreen() {
           </View>
         </Modal>
 
-        {/* Admin department picker modal */}
-        <Modal
-          visible={showTDeptPicker}
-          transparent
-          animationType="slide"
-          statusBarTranslucent
-          onRequestClose={() => setShowTDeptPicker(false)}
-        >
+        {/* Admin dept picker */}
+        <Modal visible={showTDeptPicker} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setShowTDeptPicker(false)}>
           <View style={styles.modalBackdrop}>
             <View style={styles.pickerSheet}>
               <View style={styles.pickerHandle} />
               <Text style={styles.pickerTitle}>Select Department</Text>
               <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
-                {DEPARTMENTS.map((dept) => (
-                  <TouchableOpacity
-                    key={dept}
-                    style={[styles.pickerItem, tDepartment === dept && styles.pickerItemActive]}
-                    onPress={() => { setTDepartment(dept); setShowTDeptPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.pickerItemText, tDepartment === dept && styles.pickerItemTextActive]}>
-                      {dept}
-                    </Text>
+                {DEPARTMENTS.map(dept => (
+                  <TouchableOpacity key={dept} style={[styles.pickerItem, tDepartment === dept && styles.pickerItemActive]} onPress={() => { setTDepartment(dept); setShowTDeptPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} activeOpacity={0.7}>
+                    <Text style={[styles.pickerItemText, tDepartment === dept && styles.pickerItemTextActive]}>{dept}</Text>
                     {tDepartment === dept && <Ionicons name="checkmark" size={18} color="#7C3AED" />}
                   </TouchableOpacity>
                 ))}
@@ -524,7 +314,7 @@ export default function RegisterScreen() {
           </View>
         </Modal>
 
-        {/* ── Teacher form ── */}
+        {/* Admin form */}
         {role === "teacher" && (
           <View>
             {!!error && (
@@ -533,155 +323,68 @@ export default function RegisterScreen() {
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
-
             <View style={styles.teacherBanner}>
               <Ionicons name="shield-checkmark-outline" size={16} color="#7C3AED" />
-              <Text style={styles.teacherBannerText}>
-                Admin accounts are reviewed and approved by <Text style={{ fontFamily: "Inter_700Bold" }}>Super Admin</Text> before activation.
-              </Text>
+              <Text style={styles.teacherBannerText}>Admin accounts are reviewed and approved by <Text style={{ fontFamily: "Inter_700Bold" }}>Super Admin</Text> before activation.</Text>
             </View>
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>First Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Dr. Emeka"
-                  placeholderTextColor="#94A3B8"
-                  value={tFirstName}
-                  onChangeText={setTFirstName}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
+                <TextInput style={styles.input} placeholder="e.g. Dr. Emeka" placeholderTextColor="#CBD5E1" value={tFirstName} onChangeText={setTFirstName} autoCapitalize="words" autoCorrect={false} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Surname *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Okafor"
-                  placeholderTextColor="#94A3B8"
-                  value={tSurname}
-                  onChangeText={setTSurname}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
+                <TextInput style={styles.input} placeholder="e.g. Okafor" placeholderTextColor="#CBD5E1" value={tSurname} onChangeText={setTSurname} autoCapitalize="words" autoCorrect={false} />
               </View>
             </View>
 
             <Text style={[styles.label, { marginTop: 14 }]}>Staff ID *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. STAFF001 or CS/LEC/001"
-              placeholderTextColor="#94A3B8"
-              value={tStaffId}
-              onChangeText={setTStaffId}
-              autoCapitalize="characters"
-              autoCorrect={false}
-            />
+            <TextInput style={styles.input} placeholder="e.g. STAFF001 or CS/LEC/001" placeholderTextColor="#CBD5E1" value={tStaffId} onChangeText={setTStaffId} autoCapitalize="characters" autoCorrect={false} />
 
             <Text style={[styles.label, { marginTop: 14 }]}>Position / Role *</Text>
             <View style={styles.levelRow}>
-              {(["Lecturer", "Course Representative", "Department Executive"] as const).map((r) => (
-                <TouchableOpacity
-                  key={r}
-                  style={[styles.levelChip, tSubRole === r && styles.levelChipActive]}
-                  onPress={() => { setTSubRole(r); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.levelChipText, tSubRole === r && styles.levelChipTextActive]}>
-                    {r}
-                  </Text>
+              {(["Lecturer", "Course Representative", "Department Executive"] as const).map(r => (
+                <TouchableOpacity key={r} style={[styles.levelChip, tSubRole === r && styles.levelChipActive]} onPress={() => { setTSubRole(r); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} activeOpacity={0.7}>
+                  <Text style={[styles.levelChipText, tSubRole === r && styles.levelChipTextActive]}>{r}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <Text style={[styles.label, { marginTop: 14 }]}>Phone</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 08012345678"
-              placeholderTextColor="#94A3B8"
-              value={tPhone}
-              onChangeText={setTPhone}
-              keyboardType="phone-pad"
-            />
+            <TextInput style={styles.input} placeholder="e.g. 08012345678" placeholderTextColor="#CBD5E1" value={tPhone} onChangeText={setTPhone} keyboardType="phone-pad" />
 
             <Text style={[styles.label, { marginTop: 14 }]}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. dr.okafor@university.edu"
-              placeholderTextColor="#94A3B8"
-              value={tEmail}
-              onChangeText={setTEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <TextInput style={styles.input} placeholder="e.g. dr.okafor@university.edu" placeholderTextColor="#CBD5E1" value={tEmail} onChangeText={setTEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
 
             <Text style={[styles.label, { marginTop: 14 }]}>Password *</Text>
             <View style={[styles.input, styles.inputRow]}>
-              <TextInput
-                style={{ flex: 1, fontSize: 15, color: "#0F172A", fontFamily: "Inter_400Regular" }}
-                placeholder="Min. 6 characters"
-                placeholderTextColor="#94A3B8"
-                value={tPassword}
-                onChangeText={setTPassword}
-                secureTextEntry={!tShowPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity onPress={() => setTShowPassword((p) => !p)} style={styles.eyeBtn}>
-                <Text style={styles.eyeIcon}>{tShowPassword ? "🙈" : "👁"}</Text>
+              <TextInput style={{ flex: 1, fontSize: 15, color: "#1E1B4B", fontFamily: "Inter_400Regular" }} placeholder="Min. 6 characters" placeholderTextColor="#CBD5E1" value={tPassword} onChangeText={setTPassword} secureTextEntry={!tShowPassword} autoCapitalize="none" autoCorrect={false} />
+              <TouchableOpacity onPress={() => setTShowPassword(p => !p)} style={styles.eyeBtn} activeOpacity={0.7}>
+                <Ionicons name={tShowPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
             <Text style={[styles.label, { marginTop: 14 }]}>Confirm Password *</Text>
             <View style={[styles.input, styles.inputRow]}>
-              <TextInput
-                style={{ flex: 1, fontSize: 15, color: "#0F172A", fontFamily: "Inter_400Regular" }}
-                placeholder="Re-enter password"
-                placeholderTextColor="#94A3B8"
-                value={tConfirmPassword}
-                onChangeText={setTConfirmPassword}
-                secureTextEntry={!tShowConfirm}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity onPress={() => setTShowConfirm((p) => !p)} style={styles.eyeBtn}>
-                <Text style={styles.eyeIcon}>{tShowConfirm ? "🙈" : "👁"}</Text>
+              <TextInput style={{ flex: 1, fontSize: 15, color: "#1E1B4B", fontFamily: "Inter_400Regular" }} placeholder="Re-enter password" placeholderTextColor="#CBD5E1" value={tConfirmPassword} onChangeText={setTConfirmPassword} secureTextEntry={!tShowConfirm} autoCapitalize="none" autoCorrect={false} />
+              <TouchableOpacity onPress={() => setTShowConfirm(p => !p)} style={styles.eyeBtn} activeOpacity={0.7}>
+                <Ionicons name={tShowConfirm ? "eye-off-outline" : "eye-outline"} size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
             <Text style={[styles.label, { marginTop: 14 }]}>Department *</Text>
-            <TouchableOpacity
-              style={[styles.input, styles.dropdownBtn]}
-              onPress={() => { setShowTDeptPicker(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.dropdownBtnText, !tDepartment && { color: "#94A3B8" }]}>
-                {tDepartment || "Select your department"}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color="#94A3B8" />
+            <TouchableOpacity style={[styles.input, styles.dropdownBtn]} onPress={() => { setShowTDeptPicker(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} activeOpacity={0.8}>
+              <Text style={[styles.dropdownBtnText, !tDepartment && { color: "#CBD5E1" }]}>{tDepartment || "Select your department"}</Text>
+              <Ionicons name="chevron-down" size={16} color="#A78BFA" />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.submitBtn, loading && { opacity: 0.6 }]}
-              onPress={handleTeacherRegister}
-              disabled={loading}
-              activeOpacity={0.85}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="send-outline" size={18} color="#fff" />
-                  <Text style={styles.submitBtnText}>Submit Teacher Application</Text>
-                </>
-              )}
+            <TouchableOpacity style={[styles.submitBtn, loading && { opacity: 0.6 }]} onPress={handleTeacherRegister} disabled={loading} activeOpacity={0.85}>
+              <LinearGradient colors={["#7C3AED", "#5B21B6"]} style={styles.submitGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                {loading ? <ActivityIndicator color="#fff" /> : (<><Ionicons name="send-outline" size={18} color="#fff" /><Text style={styles.submitBtnText}>Submit Application</Text></>)}
+              </LinearGradient>
             </TouchableOpacity>
-
-            <Text style={styles.note}>
-              Your admin account will be reviewed by Super Admin. Login access is granted upon approval.
-            </Text>
+            <Text style={styles.note}>Your admin account will be reviewed by Super Admin. Login access is granted upon approval.</Text>
           </View>
         )}
       </ScrollView>
@@ -690,34 +393,27 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#FAFAFA" },
+  root: { flex: 1, backgroundColor: "#fff" },
 
-  waveContainer: { width: "100%", height: 190 },
-  backLink: { position: "absolute", top: 16, left: 20 },
+  header: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 12 },
+  backLink: { alignSelf: "flex-start", marginBottom: 16 },
   backCircle: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.35)",
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "#F3EEFF", borderWidth: 1.5, borderColor: "#DDD6FE",
     alignItems: "center", justifyContent: "center",
   },
-  waveHero: { alignItems: "center", marginTop: 42 },
-  heroIconOuter: {
+  iconWrap: { alignItems: "center", marginBottom: 12 },
+  iconRing: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderWidth: 2, borderColor: "rgba(255,255,255,0.45)",
-    alignItems: "center", justifyContent: "center", marginBottom: 10,
-  },
-  heroIconInner: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: "#fff",
+    backgroundColor: "#F3EEFF", borderWidth: 2, borderColor: "#DDD6FE",
     alignItems: "center", justifyContent: "center",
   },
-  heroTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff", marginBottom: 3 },
-  heroSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)" },
+  heading: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#1E1B4B", textAlign: "center", marginBottom: 4 },
+  sub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "#64748B", textAlign: "center" },
 
   roleSwitcher: {
-    flexDirection: "row", marginHorizontal: 20, marginTop: 16, marginBottom: 8,
-    backgroundColor: "#F0EBFF", borderRadius: 14, padding: 4,
+    flexDirection: "row", marginHorizontal: 24, marginBottom: 8,
+    backgroundColor: "#F3EEFF", borderRadius: 14, padding: 4,
     borderWidth: 1, borderColor: "#DDD6FE",
   },
   roleTab: {
@@ -728,104 +424,63 @@ const styles = StyleSheet.create({
   roleTabText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
   roleTabTextActive: { color: "#fff" },
 
-  formScroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 8 },
+  formScroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 8 },
+
   errorBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "#FEE2E2", borderRadius: 10, padding: 12, marginBottom: 16,
+    backgroundColor: "#FEF2F2", borderRadius: 12, padding: 12,
+    marginBottom: 16, borderWidth: 1, borderColor: "#FECACA",
   },
   errorText: { color: "#DC2626", fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
+
   teacherBanner: {
     flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: "#F5F0FF", borderRadius: 10, padding: 12, marginBottom: 16,
-    borderWidth: 1, borderColor: "#DDD6FE",
+    backgroundColor: "#F5F0FF", borderRadius: 12, padding: 12,
+    marginBottom: 16, borderWidth: 1, borderColor: "#DDD6FE",
   },
-  teacherBannerText: {
-    fontSize: 12, fontFamily: "Inter_400Regular", color: "#5B21B6", flex: 1, lineHeight: 18,
-  },
+  teacherBannerText: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#5B21B6", flex: 1, lineHeight: 18 },
+
   row: { flexDirection: "row", gap: 10 },
   label: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#374151", marginBottom: 7 },
   input: {
-    backgroundColor: "#F8FAFC", borderWidth: 1.5, borderColor: "#E2E8F0",
+    backgroundColor: "#FAFAFA", borderWidth: 1.5, borderColor: "#E8E0FF",
     borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
-    fontSize: 15, fontFamily: "Inter_400Regular", color: "#0F172A",
+    fontSize: 15, fontFamily: "Inter_400Regular", color: "#1E1B4B",
   },
   inputRow: { flexDirection: "row", alignItems: "center" },
   eyeBtn: { position: "absolute", right: 12, padding: 4 },
-  eyeIcon: { fontSize: 16 },
   levelRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   levelChip: {
     paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20,
-    backgroundColor: "#F1F5F9", borderWidth: 1.5, borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC", borderWidth: 1.5, borderColor: "#E2E8F0",
   },
-  levelChipActive: { backgroundColor: "#7C3AED20", borderColor: "#7C3AED" },
+  levelChipActive: { backgroundColor: "#EDE9FF", borderColor: "#7C3AED" },
   levelChipText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#64748B" },
   levelChipTextActive: { color: "#7C3AED" },
   dropdownBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  dropdownBtnText: { fontSize: 15, fontFamily: "Inter_400Regular", color: "#0F172A", flex: 1 },
+  dropdownBtnText: { fontSize: 15, fontFamily: "Inter_400Regular", color: "#1E1B4B", flex: 1 },
+
+  submitBtn: { marginTop: 20, borderRadius: 16, overflow: "hidden" },
+  submitGrad: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15 },
+  submitBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
+  note: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#94A3B8", textAlign: "center", marginTop: 12, lineHeight: 18 },
+
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  pickerSheet: {
-    backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 20, paddingBottom: 36,
-  },
-  pickerHandle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 16,
-  },
-  pickerTitle: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#0F172A", marginBottom: 12 },
-  pickerItem: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingVertical: 13, paddingHorizontal: 4,
-    borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
-  },
+  pickerSheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36 },
+  pickerHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 16 },
+  pickerTitle: { fontSize: 17, fontFamily: "Inter_700Bold", color: "#1E1B4B", marginBottom: 12 },
+  pickerItem: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: "#F1F5F9" },
   pickerItemActive: { backgroundColor: "#F5F0FF", borderRadius: 10, paddingHorizontal: 10 },
   pickerItemText: { fontSize: 15, fontFamily: "Inter_400Regular", color: "#374151" },
   pickerItemTextActive: { fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
-  pickerCancel: {
-    marginTop: 16, alignItems: "center", backgroundColor: "#F1F5F9",
-    borderRadius: 14, paddingVertical: 14,
-  },
+  pickerCancel: { marginTop: 16, alignItems: "center", backgroundColor: "#F1F5F9", borderRadius: 14, paddingVertical: 14 },
   pickerCancelText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: "#64748B" },
-  deptBadge: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#F0F4FF", borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 9,
-    marginTop: 16, borderWidth: 1, borderColor: "#DBEAFE",
-  },
-  deptText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
-  submitBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, backgroundColor: "#7C3AED",
-    borderRadius: 14, paddingVertical: 15, marginTop: 20,
-  },
-  submitBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
-  note: {
-    fontSize: 12, fontFamily: "Inter_400Regular", color: "#94A3B8",
-    textAlign: "center", marginTop: 12, lineHeight: 18,
-  },
-  successCard: {
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 28, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
-    padding: 32, alignItems: "center", gap: 16, width: "100%",
-  },
+
+  successCard: { backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 28, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", padding: 32, alignItems: "center", gap: 16, width: "100%" },
   successTitle: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
-  successBody: {
-    fontSize: 14, fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.75)", textAlign: "center", lineHeight: 22,
-  },
-  infoNote: {
-    flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 12,
-    padding: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", width: "100%",
-  },
-  infoNoteText: {
-    fontSize: 13, fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.85)", flex: 1, lineHeight: 19,
-  },
-  backBtn: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 14,
-    paddingHorizontal: 20, paddingVertical: 12, marginTop: 8,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
-  },
-  backBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  successBody: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)", textAlign: "center", lineHeight: 22 },
+  infoNote: { flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 12, padding: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", width: "100%" },
+  infoNoteText: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.85)", flex: 1, lineHeight: 19 },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 14, paddingHorizontal: 20, paddingVertical: 12, marginTop: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
+  backBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 14 },
 });
