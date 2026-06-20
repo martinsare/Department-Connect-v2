@@ -21,6 +21,7 @@ import {
   type RegisteredTeacher,
 } from "@/context/registeredTeachersStore";
 import { useAuth } from "@/context/AuthContext";
+import { LottieEmpty } from "@/components/LottieEmpty";
 
 export default function ApprovalsScreen() {
   const colors = useColors();
@@ -161,15 +162,10 @@ export default function ApprovalsScreen() {
           ) : null
         }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
-              <Ionicons name="person-add-outline" size={40} color={colors.mutedForeground} />
-            </View>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No Admin Requests</Text>
-            <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>
-              Admin registration requests will appear here for review.
-            </Text>
-          </View>
+          <LottieEmpty
+            message="No Admin Requests"
+            subMessage="Admin registration requests will appear here for review."
+          />
         }
         renderItem={({ item }) =>
           renderTeacher({ item, isPending: (item as any)._isPending })

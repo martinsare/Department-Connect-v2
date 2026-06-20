@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { useData, type StudentStatus } from "@/context/DataContext";
 import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
+import { LottieEmpty } from "@/components/LottieEmpty";
 import { Avatar } from "@/components/Avatar";
 
 const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L", "Graduated"];
@@ -233,10 +234,10 @@ export default function StudentsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="people-outline" size={48} color={colors.mutedForeground} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No students found</Text>
-          </View>
+          <LottieEmpty
+            message="No Students Found"
+            subMessage="Students will appear here once approved."
+          />
         }
         renderItem={({ item: s }) => {
           const statusColor = STATUS_COLORS[s.status];

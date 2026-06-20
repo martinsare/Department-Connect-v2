@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { useData, type StudentRecord } from "@/context/DataContext";
 import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
+import { LottieEmpty } from "@/components/LottieEmpty";
 import { Avatar } from "@/components/Avatar";
 
 export default function ApprovalsScreen() {
@@ -58,13 +59,10 @@ export default function ApprovalsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="checkmark-done-circle" size={64} color={colors.success} />
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>All Clear</Text>
-            <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>
-              No pending approvals at this time.
-            </Text>
-          </View>
+          <LottieEmpty
+            message="All Clear"
+            subMessage="No pending student approvals at this time."
+          />
         }
         renderItem={({ item: s }) => (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
