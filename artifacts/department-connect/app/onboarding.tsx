@@ -22,25 +22,25 @@ const ONBOARDING_KEY = "dc_onboarding_done";
 
 const SLIDES = [
   {
-    image: require("../assets/images/onboard1.png"),
+    image: require("../assets/images/onboard1.jpg"),
     title: "Welcome to\nDepartment Connect",
     subtitle: "Your all-in-one academic management platform. Stay connected with your department community.",
     accent: "#7C3AED",
   },
   {
-    image: require("../assets/images/onboard2.png"),
+    image: require("../assets/images/onboard2.jpg"),
     title: "Track Classes\n& Attendance",
     subtitle: "Never miss a class. Scan QR codes for instant attendance, view your records anytime.",
     accent: "#6D28D9",
   },
   {
-    image: require("../assets/images/onboard3.png"),
+    image: require("../assets/images/onboard3.jpg"),
     title: "Stay Updated\nInstantly",
     subtitle: "Get real-time announcements, event notifications, and important updates from your department.",
     accent: "#5B21B6",
   },
   {
-    image: require("../assets/images/onboard4.png"),
+    image: require("../assets/images/onboard4.jpg"),
     title: "Your Academic\nCommunity",
     subtitle: "Connect with classmates, access resources, and manage contributions — all in one place.",
     accent: "#4C1D95",
@@ -117,7 +117,7 @@ export default function OnboardingScreen() {
       >
         {SLIDES.map((s, i) => (
           <View key={i} style={styles.illustrationSlide}>
-            <Image source={s.image} style={styles.illustration} resizeMode="contain" />
+            <Image source={s.image} style={styles.illustration} resizeMode="cover" />
           </View>
         ))}
       </ScrollView>
@@ -187,10 +187,10 @@ const styles = StyleSheet.create({
   illustrationScroll: { height: ILLUS_HEIGHT, flexGrow: 0 },
   illustrationSlide: {
     width: SCREEN_W, height: ILLUS_HEIGHT,
-    alignItems: "center", justifyContent: "center",
+    overflow: "hidden",
   },
   illustration: {
-    width: SCREEN_W * 0.82,
+    width: SCREEN_W,
     height: ILLUS_HEIGHT,
   },
   bottomContent: {
