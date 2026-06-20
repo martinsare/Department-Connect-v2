@@ -16,9 +16,10 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { ONBOARDING_STORAGE_KEY } from "@/data/seedData";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
-const ONBOARDING_KEY = "dc_onboarding_done";
+const ONBOARDING_KEY = ONBOARDING_STORAGE_KEY;
 
 const SLIDES = [
   {

@@ -19,14 +19,10 @@ import { useData } from "@/context/DataContext";
 import { addRegisteredStudent } from "@/context/registeredStudentsStore";
 import { addRegisteredTeacher, registeredTeachersStore } from "@/context/registeredTeachersStore";
 import { SuccessAnimation } from "@/components/AnimatedStatus";
+import { LEVELS as SEED_LEVELS, DEPARTMENTS as SEED_DEPARTMENTS } from "@/data/seedData";
 
-const LEVELS = ["100L", "200L", "300L", "400L", "500L"];
-const DEPARTMENTS = [
-  "Computer Science", "Mathematics", "Physics", "Chemistry", "Biology",
-  "Economics", "Accounting", "Business Administration",
-  "Electrical Engineering", "Mechanical Engineering", "Civil Engineering",
-  "Law", "Medicine & Surgery", "Nursing Science", "Mass Communication",
-];
+const LEVELS = [...SEED_LEVELS].filter((l) => l !== "Graduated");
+const DEPARTMENTS = [...SEED_DEPARTMENTS];
 
 type Role = "student" | "teacher";
 type DoneType = "student" | "teacher";

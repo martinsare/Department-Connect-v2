@@ -17,8 +17,9 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useData, type Contribution } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { LEVELS as SEED_LEVELS } from "@/data/seedData";
 
-const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L"];
+const LEVELS = ["All", ...SEED_LEVELS].filter((l) => l !== "Graduated");
 
 /* ── Create Contribution Modal ── */
 function CreateContributionModal({ onClose, onCreate }: {

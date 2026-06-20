@@ -18,8 +18,8 @@ import Svg, { Rect } from "react-native-svg";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import { QR_ATTENDANCE_TOKEN as QR_TOKEN } from "@/data/seedData";
 
-const QR_TOKEN = "DEPT_CONNECT_2026";
 const FRAME = 240;
 const CORNER = 30;
 

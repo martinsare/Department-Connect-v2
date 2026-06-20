@@ -19,6 +19,10 @@ import { useRouter } from "expo-router";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import { Avatar } from "@/components/Avatar";
+import {
+  EVENT_TARGET_OPTIONS as TARGET_OPTIONS,
+  ANNOUNCEMENT_CATEGORIES as CATEGORIES,
+} from "@/data/seedData";
 
 function StatCard({
   label,
@@ -60,8 +64,6 @@ const cardStyles = StyleSheet.create({
   sub: { fontSize: 11, fontFamily: "Inter_600SemiBold", marginTop: 2 },
 });
 
-const TARGET_OPTIONS = ["All Students", "100L", "200L", "300L", "400L", "500L"];
-const CATEGORIES = ["Academic", "Administrative", "Financial", "Social", "Urgent"];
 
 export default function AdminDashboard() {
   const colors = useColors();

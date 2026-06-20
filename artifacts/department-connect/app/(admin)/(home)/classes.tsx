@@ -18,8 +18,7 @@ import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import type { ClassSession, ClassAttendee } from "@/context/DataContext";
 import { Avatar } from "@/components/Avatar";
-
-const QR_TOKEN = "DEPT_CONNECT_2026";
+import { QR_ATTENDANCE_TOKEN as QR_TOKEN } from "@/data/seedData";
 
 const STATUS_COLORS: Record<string, string> = {
   ongoing: "#10B981",

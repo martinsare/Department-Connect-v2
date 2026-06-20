@@ -20,9 +20,10 @@ import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
 import { LottieEmpty } from "@/components/LottieEmpty";
 import { Avatar } from "@/components/Avatar";
+import { LEVELS as SEED_LEVELS } from "@/data/seedData";
 
-const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L", "Graduated"];
-const LEVEL_OPTIONS = ["100L", "200L", "300L", "400L", "500L", "Graduated"];
+const LEVELS = ["All", ...SEED_LEVELS];
+const LEVEL_OPTIONS = [...SEED_LEVELS];
 const BULK_FROM_OPTIONS = ["500L", "400L", "300L", "200L", "100L"]; // reversed: clear top first
 const BULK_TO_OPTIONS = ["100L", "200L", "300L", "400L", "500L", "Graduated"];
 const NEXT_LEVEL: Record<string, string> = {

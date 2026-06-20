@@ -18,6 +18,11 @@ import * as Haptics from "expo-haptics";
 import { useData, type EventCategory, type ClassStatus } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+import {
+  EVENT_TARGET_OPTIONS as TARGET_OPTIONS,
+  EVENT_REMINDER_OPTIONS as REMINDER_OPTIONS,
+  VENUE_OPTIONS,
+} from "@/data/seedData";
 
 const CATEGORY_META: Record<EventCategory, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap; description: string }> = {
   lecture: { label: "Lecture Session", color: "#7C3AED", icon: "school-outline", description: "Academic class session" },
@@ -26,9 +31,6 @@ const CATEGORY_META: Record<EventCategory, { label: string; color: string; icon:
   extra: { label: "Extra / Notice", color: "#10B981", icon: "receipt-outline", description: "Financial or admin notice" },
 };
 
-const TARGET_OPTIONS = ["All Students", "100L", "200L", "300L", "400L", "500L"];
-const REMINDER_OPTIONS = ["None", "24 hours before", "1 hour before", "Both"];
-const VENUE_OPTIONS = ["LT1", "LT2", "LT3", "Lab 1", "Faculty Building", "Sports Complex", "Online (WhatsApp)", "Online (Zoom)", "Other"];
 
 type CreateMode = "event" | "class";
 
