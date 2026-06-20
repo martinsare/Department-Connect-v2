@@ -308,74 +308,78 @@ export default function AdminClassesScreen() {
       <Modal visible={!!rosterClass} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setRosterClass(null)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.rosterSheet, { backgroundColor: colors.card }]}>
-            <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-            {/* Header */}
-            <View style={styles.rosterHeader}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.modalTitle, { color: colors.foreground, marginBottom: 2 }]}>
-                  Attendance Roster
-                </Text>
-                {rosterClass && (
-                  <Text style={[styles.modalCourse, { color: colors.primary }]}>
-                    {rosterClass.courseCode} — {rosterClass.courseName}
+            {/* Fixed header section — padded separately so ScrollView reaches the edges */}
+            <View style={styles.rosterFixed}>
+              <View style={[styles.handle, { backgroundColor: colors.border }]} />
+
+              {/* Header */}
+              <View style={styles.rosterHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.modalTitle, { color: colors.foreground, marginBottom: 2 }]}>
+                    Attendance Roster
                   </Text>
-                )}
+                  {rosterClass && (
+                    <Text style={[styles.modalCourse, { color: colors.primary }]}>
+                      {rosterClass.courseCode} — {rosterClass.courseName}
+                    </Text>
+                  )}
+                </View>
+                <TouchableOpacity onPress={() => setRosterClass(null)}>
+                  <Ionicons name="close" size={22} color={colors.mutedForeground} />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => setRosterClass(null)}>
-                <Ionicons name="close" size={22} color={colors.mutedForeground} />
-              </TouchableOpacity>
+
+              {/* Stats row */}
+              {rosterClass && (
+                <View style={[styles.rosterStats, { backgroundColor: colors.muted }]}>
+                  <View style={styles.rosterStat}>
+                    <Text style={[styles.rosterStatVal, { color: colors.primary }]}>{rosterList.length}</Text>
+                    <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Present</Text>
+                  </View>
+                  <View style={[styles.rosterStatDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.rosterStat}>
+                    <Text style={[styles.rosterStatVal, { color: colors.foreground }]}>{rosterClass.date}</Text>
+                    <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Date</Text>
+                  </View>
+                  <View style={[styles.rosterStatDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.rosterStat}>
+                    <Text style={[styles.rosterStatVal, { color: colors.foreground }]}>{rosterClass.startTime}</Text>
+                    <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Start Time</Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Attendance open toggle */}
+              {rosterClass && (
+                <TouchableOpacity
+                  style={[
+                    styles.rosterToggle,
+                    { backgroundColor: rosterClass.attendanceOpen ? "#10B98115" : "#EF444415" },
+                  ]}
+                  onPress={() => {
+                    handleToggle(rosterClass);
+                    setRosterClass((prev) =>
+                      prev ? { ...prev, attendanceOpen: !prev.attendanceOpen } : null
+                    );
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name={rosterClass.attendanceOpen ? "lock-open-outline" : "lock-closed-outline"}
+                    size={15}
+                    color={rosterClass.attendanceOpen ? "#10B981" : "#EF4444"}
+                  />
+                  <Text style={[styles.rosterToggleText, { color: rosterClass.attendanceOpen ? "#10B981" : "#EF4444" }]}>
+                    {rosterClass.attendanceOpen
+                      ? "Attendance is OPEN — tap to close"
+                      : "Attendance is CLOSED — tap to open"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
-            {/* Stats row */}
-            {rosterClass && (
-              <View style={[styles.rosterStats, { backgroundColor: colors.muted }]}>
-                <View style={styles.rosterStat}>
-                  <Text style={[styles.rosterStatVal, { color: colors.primary }]}>{rosterList.length}</Text>
-                  <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Present</Text>
-                </View>
-                <View style={[styles.rosterStatDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.rosterStat}>
-                  <Text style={[styles.rosterStatVal, { color: colors.foreground }]}>{rosterClass.date}</Text>
-                  <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Date</Text>
-                </View>
-                <View style={[styles.rosterStatDivider, { backgroundColor: colors.border }]} />
-                <View style={styles.rosterStat}>
-                  <Text style={[styles.rosterStatVal, { color: colors.foreground }]}>{rosterClass.startTime}</Text>
-                  <Text style={[styles.rosterStatLabel, { color: colors.mutedForeground }]}>Start Time</Text>
-                </View>
-              </View>
-            )}
-
-            {/* Attendance open toggle */}
-            {rosterClass && (
-              <TouchableOpacity
-                style={[
-                  styles.rosterToggle,
-                  { backgroundColor: rosterClass.attendanceOpen ? "#10B98115" : "#EF444415" },
-                ]}
-                onPress={() => {
-                  handleToggle(rosterClass);
-                  setRosterClass((prev) =>
-                    prev ? { ...prev, attendanceOpen: !prev.attendanceOpen } : null
-                  );
-                }}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name={rosterClass.attendanceOpen ? "lock-open-outline" : "lock-closed-outline"}
-                  size={15}
-                  color={rosterClass.attendanceOpen ? "#10B981" : "#EF4444"}
-                />
-                <Text style={[styles.rosterToggleText, { color: rosterClass.attendanceOpen ? "#10B981" : "#EF4444" }]}>
-                  {rosterClass.attendanceOpen
-                    ? "Attendance is OPEN — tap to close"
-                    : "Attendance is CLOSED — tap to open"}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {/* List */}
+            {/* Scrollable list — flex: 1 now works because rosterSheet has flex: 1 */}
             {rosterList.length === 0 ? (
               <View style={styles.rosterEmpty}>
                 <View style={[styles.rosterEmptyIcon, { backgroundColor: colors.muted }]}>
@@ -391,7 +395,7 @@ export default function AdminClassesScreen() {
             ) : (
               <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{ paddingBottom: 20 }}
+                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 36 }}
                 showsVerticalScrollIndicator={false}
               >
                 {rosterList.map((item, i) => (
@@ -447,8 +451,11 @@ const styles = StyleSheet.create({
   },
   rosterSheet: {
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    padding: 24, paddingBottom: 36,
     maxHeight: "85%",
+    flex: 1,
+  },
+  rosterFixed: {
+    paddingHorizontal: 24, paddingTop: 24, paddingBottom: 4,
   },
   handle: { width: 36, height: 4, borderRadius: 2, marginBottom: 20, alignSelf: "center" },
   modalTitle: { fontSize: 18, fontFamily: "Inter_700Bold", marginBottom: 6 },
