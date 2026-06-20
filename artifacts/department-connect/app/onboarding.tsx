@@ -92,29 +92,7 @@ export default function OnboardingScreen() {
   const isLast = activeIndex === SLIDES.length - 1;
 
   return (
-    <View style={styles.root}>
-      {/* Scrollable slides */}
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
-        scrollEventThrottle={16}
-        style={StyleSheet.absoluteFill}
-      >
-        {SLIDES.map((s, i) => (
-          <View key={i} style={{ width: SCREEN_W, height: SCREEN_H }}>
-            <Image source={s.image} style={styles.slideImage} resizeMode="cover" />
-            <LinearGradient
-              colors={["transparent", "rgba(13,7,32,0.6)", "rgba(13,7,32,0.95)", "#0D0720"]}
-              style={StyleSheet.absoluteFill}
-              locations={[0, 0.35, 0.65, 1]}
-            />
-          </View>
-        ))}
-      </ScrollView>
-
+    <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={styles.root}>
       {/* Skip button */}
       <View style={[styles.topBar, { paddingTop: topPad + 8 }]}>
         <View />
@@ -126,36 +104,40 @@ export default function OnboardingScreen() {
         )}
       </View>
 
+      {/* Scrollable illustration area */}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.illustrationScroll}
+        contentContainerStyle={{ alignItems: "center" }}
+      >
+        {SLIDES.map((s, i) => (
+          <View key={i} style={styles.illustrationSlide}>
+            <Image source={s.image} style={styles.illustration} resizeMode="contain" />
+          </View>
+        ))}
+      </ScrollView>
+
       {/* Bottom content */}
       <Animated.View style={[styles.bottomContent, { paddingBottom: botPad, opacity: fadeAnim }]}>
-        {/* Slide number */}
-        <Text style={styles.slideCounter}>
-          {activeIndex + 1} of {SLIDES.length}
-        </Text>
+        {/* Dots */}
+        <View style={styles.dots}>
+          {SLIDES.map((_, i) => (
+            <TouchableOpacity key={i} onPress={() => goToSlide(i)} activeOpacity={0.7}>
+              <Animated.View style={[styles.dot, i === activeIndex && styles.dotActive]} />
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {/* Title */}
         <Text style={styles.title}>{slide.title}</Text>
 
         {/* Subtitle */}
         <Text style={styles.subtitle}>{slide.subtitle}</Text>
-
-        {/* Dots */}
-        <View style={styles.dots}>
-          {SLIDES.map((_, i) => (
-            <TouchableOpacity
-              key={i}
-              onPress={() => goToSlide(i)}
-              activeOpacity={0.7}
-            >
-              <Animated.View
-                style={[
-                  styles.dot,
-                  i === activeIndex && styles.dotActive,
-                ]}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
 
         {/* Action button */}
         <TouchableOpacity
@@ -183,18 +165,17 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         )}
       </Animated.View>
-    </View>
+    </LinearGradient>
   );
 }
 
+const ILLUS_HEIGHT = SCREEN_H * 0.46;
+
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0D0720" },
-  slideImage: { width: SCREEN_W, height: SCREEN_H, position: "absolute" },
+  root: { flex: 1 },
   topBar: {
-    position: "absolute", top: 0, left: 0, right: 0,
     paddingHorizontal: 24, flexDirection: "row",
-    alignItems: "center", justifyContent: "space-between",
-    zIndex: 10,
+    alignItems: "center", justifyContent: "flex-end",
   },
   skipBtn: {
     flexDirection: "row", alignItems: "center", gap: 2,
@@ -203,24 +184,27 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
   },
   skipText: { color: "rgba(255,255,255,0.7)", fontFamily: "Inter_600SemiBold", fontSize: 13 },
-  bottomContent: {
-    position: "absolute", bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 28, paddingTop: 20,
+  illustrationScroll: { height: ILLUS_HEIGHT, flexGrow: 0 },
+  illustrationSlide: {
+    width: SCREEN_W, height: ILLUS_HEIGHT,
+    alignItems: "center", justifyContent: "center",
   },
-  slideCounter: {
-    fontSize: 12, fontFamily: "Inter_600SemiBold",
-    color: "rgba(255,255,255,0.45)", letterSpacing: 1.5,
-    textTransform: "uppercase", marginBottom: 14,
+  illustration: {
+    width: SCREEN_W * 0.82,
+    height: ILLUS_HEIGHT,
+  },
+  bottomContent: {
+    flex: 1, paddingHorizontal: 28, paddingTop: 12, justifyContent: "flex-end",
   },
   title: {
-    fontSize: 36, fontFamily: "Inter_700Bold",
-    color: "#fff", lineHeight: 44, marginBottom: 14,
+    fontSize: 30, fontFamily: "Inter_700Bold",
+    color: "#fff", lineHeight: 38, marginBottom: 10, marginTop: 8,
   },
   subtitle: {
     fontSize: 15, fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.7)", lineHeight: 24, marginBottom: 32,
+    color: "rgba(255,255,255,0.65)", lineHeight: 24, marginBottom: 28,
   },
-  dots: { flexDirection: "row", gap: 8, marginBottom: 28 },
+  dots: { flexDirection: "row", gap: 8, marginBottom: 4 },
   dot: {
     width: 8, height: 8, borderRadius: 4,
     backgroundColor: "rgba(255,255,255,0.25)",
