@@ -126,11 +126,8 @@ function ClassicTabLayout() {
             ),
         }}
       />
-      {/* Notifications accessible via bell icon — hidden from tab bar */}
-      <Tabs.Screen
-        name="notifications"
-        options={{ tabBarButton: () => null, title: "Notifications" }}
-      />
+      {/* notifications accessible via bell icon — not shown in tab bar */}
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

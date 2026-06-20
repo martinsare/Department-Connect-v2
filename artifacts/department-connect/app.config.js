@@ -31,6 +31,13 @@ module.exports = {
       ],
       "expo-font",
       "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          cameraPermission: "Allow Department Connect to access your camera to scan attendance QR codes.",
+          microphonePermission: false,
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

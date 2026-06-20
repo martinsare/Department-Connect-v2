@@ -485,6 +485,7 @@ interface DataContextValue {
   addStudent: (student: Omit<StudentRecord, "id">) => void;
   createEvent: (event: Omit<AppEvent, "id">) => void;
   createClass: (cls: Omit<ClassSession, "id">) => void;
+  toggleAttendanceOpen: (classId: string) => void;
   addAnnouncement: (ann: Omit<Announcement, "id">) => void;
 }
 
@@ -560,6 +561,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setClasses((prev) => [...prev, { ...cls, id }]);
   };
 
+  const toggleAttendanceOpen = (classId: string) => {
+    setClasses((prev) =>
+      prev.map((c) => c.id === classId ? { ...c, attendanceOpen: !c.attendanceOpen } : c)
+    );
+  };
+
   const addAnnouncement = (ann: Omit<Announcement, "id">) => {
     const id = `an${Date.now()}`;
     setAnnouncements((prev) => [{ ...ann, id }, ...prev]);
@@ -595,6 +602,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addStudent,
         createEvent,
         createClass,
+        toggleAttendanceOpen,
         addAnnouncement,
       }}
     >

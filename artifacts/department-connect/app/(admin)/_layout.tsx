@@ -16,6 +16,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "rectangle.grid.2x2", selected: "rectangle.grid.2x2.fill" }} />
         <Label>Dashboard</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="classes">
+        <Icon sf={{ default: "qrcode", selected: "qrcode" }} />
+        <Label>Classes</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="students">
         <Icon sf={{ default: "person.3", selected: "person.3.fill" }} />
         <Label>Students</Label>
@@ -27,10 +31,6 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="events">
         <Icon sf={{ default: "calendar.badge.plus", selected: "calendar.badge.plus" }} />
         <Label>Events</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="analytics">
-        <Icon sf={{ default: "chart.bar", selected: "chart.bar.fill" }} />
-        <Label>Analytics</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -79,6 +79,18 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
+        name="classes"
+        options={{
+          title: "Classes",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name="qrcode" tintColor={color} size={22} />
+            ) : (
+              <Ionicons name={focused ? "qr-code" : "qr-code-outline"} size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
         name="students"
         options={{
           title: "Students",
@@ -114,18 +126,7 @@ function ClassicTabLayout() {
             ),
         }}
       />
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          title: "Analytics",
-          tabBarIcon: ({ color, focused }) =>
-            isIOS ? (
-              <SymbolView name={focused ? "chart.bar.fill" : "chart.bar"} tintColor={color} size={22} />
-            ) : (
-              <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={22} color={color} />
-            ),
-        }}
-      />
+      <Tabs.Screen name="analytics" options={{ href: null }} />
     </Tabs>
   );
 }
