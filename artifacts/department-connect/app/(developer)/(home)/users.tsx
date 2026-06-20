@@ -16,9 +16,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
+import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import { formatDob } from "@/utils/formatDob";
 import type { AdminSubRole, AuthUser } from "@/context/AuthContext";
+import { Avatar } from "@/components/Avatar";
 
 type RoleFilter = "all" | "student" | "admin" | "developer";
 
@@ -47,7 +49,8 @@ type DetailUser = AuthUser & { password: string };
 export default function UsersScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { allUsers, addAdmin } = useAuth();
+  const { allUsers, addAdmin, profilePictures } = useAuth();
+  const { students } = useData();
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [showForm, setShowForm] = useState(false);
   const [detailUser, setDetailUser] = useState<DetailUser | null>(null);
@@ -169,11 +172,13 @@ export default function UsersScreen() {
               }}
               activeOpacity={0.8}
             >
-              <View style={[styles.avatar, { backgroundColor: roleColor + "20" }]}>
-                <Text style={[styles.avatarText, { color: roleColor }]}>
-                  {u.firstName[0]}{u.surname[0]}
-                </Text>
-              </View>
+              <Avatar
+                uri={profilePictures[u.id] ?? students.find((s) => s.matricNumber === u.matricNumber)?.profilePicture}
+                initials={`${u.firstName[0]}${u.surname[0]}`}
+                size={44}
+                backgroundColor={roleColor + "20"}
+                textColor={roleColor}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.userName, { color: colors.foreground }]}>{u.firstName} {u.surname}</Text>
                 <Text style={[styles.userMeta, { color: colors.mutedForeground }]}>{identifier}  ·  {sublabel}</Text>
@@ -229,11 +234,13 @@ export default function UsersScreen() {
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
                   {/* Header */}
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 }}>
-                    <View style={[detail.bigAvatar, { backgroundColor: roleColor + "20" }]}>
-                      <Text style={[detail.bigAvatarText, { color: roleColor }]}>
-                        {u.firstName[0]}{u.surname[0]}
-                      </Text>
-                    </View>
+                    <Avatar
+                      uri={profilePictures[u.id] ?? students.find((s) => s.matricNumber === u.matricNumber)?.profilePicture}
+                      initials={`${u.firstName[0]}${u.surname[0]}`}
+                      size={56}
+                      backgroundColor={roleColor + "20"}
+                      textColor={roleColor}
+                    />
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 19, fontFamily: "Inter_700Bold", color: colors.foreground }}>
                         {u.firstName} {u.surname}

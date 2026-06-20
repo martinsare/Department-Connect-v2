@@ -41,6 +41,7 @@ interface AuthContextValue {
   updateUser: (updates: Partial<AuthUser>) => void;
   addAdmin: (admin: Omit<AuthUser, "id"> & { password: string }) => void;
   allUsers: (AuthUser & { password: string })[];
+  profilePictures: Record<string, string>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -228,6 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [adminList, setAdminList] = useState<(AuthUser & { password: string })[]>([...DEMO_ADMINS]);
   const adminRef = React.useRef<(AuthUser & { password: string })[]>([...DEMO_ADMINS]);
+  const [profilePictures, setProfilePictures] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadUser = async () => {
@@ -318,6 +320,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!prev) return prev;
       const updated = { ...prev, ...updates };
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+      if (updates.profilePicture) {
+        setProfilePictures((pics) => ({ ...pics, [prev.id]: updates.profilePicture! }));
+      }
       return updated;
     });
   }, []);
@@ -328,7 +333,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser, addAdmin, allUsers }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser, addAdmin, allUsers, profilePictures }}>
       {children}
     </AuthContext.Provider>
   );

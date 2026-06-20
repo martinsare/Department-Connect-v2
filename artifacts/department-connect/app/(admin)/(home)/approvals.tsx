@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { useData, type StudentRecord } from "@/context/DataContext";
 import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
+import { Avatar } from "@/components/Avatar";
 
 export default function ApprovalsScreen() {
   const colors = useColors();
@@ -68,9 +69,13 @@ export default function ApprovalsScreen() {
         renderItem={({ item: s }) => (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardTop}>
-              <View style={styles.avatarSmall}>
-                <Text style={styles.avatarSmallText}>{s.firstName[0]}{s.surname[0]}</Text>
-              </View>
+              <Avatar
+                uri={s.profilePicture}
+                initials={`${s.firstName[0]}${s.surname[0]}`}
+                size={44}
+                backgroundColor="#EDE9FE"
+                textColor="#7C3AED"
+              />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.studentName, { color: colors.foreground }]}>{s.firstName} {s.surname}</Text>
                 <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>{s.matricNumber}  ·  {s.level}</Text>

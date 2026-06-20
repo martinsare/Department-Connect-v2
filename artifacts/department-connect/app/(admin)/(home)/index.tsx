@@ -242,9 +242,13 @@ export default function AdminDashboard() {
             </View>
             {pendingStudents.slice(0, 3).map((s) => (
               <View key={s.id} style={[styles.pendingCard, { backgroundColor: "#FEF3C7", borderColor: "#FCD34D" }]}>
-                <View style={[styles.pendingAvatar, { backgroundColor: "#F59E0B20" }]}>
-                  <Text style={styles.pendingAvatarText}>{s.firstName[0]}{s.surname[0]}</Text>
-                </View>
+                <Avatar
+                  uri={s.profilePicture}
+                  initials={`${s.firstName[0]}${s.surname[0]}`}
+                  size={40}
+                  backgroundColor="#F59E0B20"
+                  textColor="#B45309"
+                />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.pendingName}>{s.firstName} {s.surname}</Text>
                   <Text style={styles.pendingMeta}>{s.matricNumber}  ·  {s.level}</Text>
