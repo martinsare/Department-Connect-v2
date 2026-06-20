@@ -186,11 +186,12 @@ export default function AdminClassesScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: colors.muted }]}
+            style={[styles.rosterBtn, { backgroundColor: colors.primary + "18" }]}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setRosterClass(cls); }}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
           >
-            <Ionicons name="people" size={14} color={colors.mutedForeground} />
+            <Ionicons name="people-outline" size={14} color={colors.primary} />
+            <Text style={[styles.rosterBtnText, { color: colors.primary }]}>Roster</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -380,9 +381,11 @@ export default function AdminClassesScreen() {
                 <View style={[styles.rosterEmptyIcon, { backgroundColor: colors.muted }]}>
                   <Ionicons name="people-outline" size={36} color={colors.mutedForeground} />
                 </View>
-                <Text style={[styles.rosterEmptyTitle, { color: colors.foreground }]}>No one yet</Text>
+                <Text style={[styles.rosterEmptyTitle, { color: colors.foreground }]}>No attendees recorded</Text>
                 <Text style={[styles.rosterEmptyBody, { color: colors.mutedForeground }]}>
-                  Students who scan the QR code will appear here in real time.
+                  {rosterClass?.attendanceOpen
+                    ? "Students who scan the QR code will appear here in real time."
+                    : "No students scanned in during this session."}
                 </Text>
               </View>
             ) : (
@@ -427,10 +430,11 @@ const styles = StyleSheet.create({
     gap: 6, paddingVertical: 8, borderRadius: 10,
   },
   toggleText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  iconBtn: {
-    width: 36, height: 36, borderRadius: 10,
-    alignItems: "center", justifyContent: "center",
+  rosterBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
   },
+  rosterBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   qrBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
