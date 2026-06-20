@@ -20,7 +20,7 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
 const CATEGORY_META: Record<EventCategory, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap; description: string }> = {
-  lecture: { label: "Lecture Session", color: "#3B82F6", icon: "school-outline", description: "Academic class session" },
+  lecture: { label: "Lecture Session", color: "#7C3AED", icon: "school-outline", description: "Academic class session" },
   big_event: { label: "Big Event", color: "#F59E0B", icon: "megaphone-outline", description: "High-visibility department event" },
   small_event: { label: "Small Event", color: "#8B5CF6", icon: "people-circle-outline", description: "Targeted group activity" },
   extra: { label: "Extra / Notice", color: "#10B981", icon: "receipt-outline", description: "Financial or admin notice" },
@@ -489,7 +489,7 @@ export default function EventsScreen() {
                   </View>
 
                   <TouchableOpacity
-                    style={[modalStyles.submitBtn, { backgroundColor: "#3B82F6" }]}
+                    style={[modalStyles.submitBtn, { backgroundColor: "#7C3AED" }]}
                     onPress={handleCreateClass}
                     activeOpacity={0.85}
                   >

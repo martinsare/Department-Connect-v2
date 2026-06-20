@@ -162,7 +162,7 @@ export default function AdminDashboard() {
       >
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Overview</Text>
         <View style={styles.statsGrid}>
-          <StatCard label="Active Students" value={activeStudents} icon="people" color="#3B82F6" />
+          <StatCard label="Active Students" value={activeStudents} icon="people" color="#7C3AED" />
           <StatCard
             label="Pending Approvals"
             value={pendingStudents.length}
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
             color="#10B981"
             sub={`${todayClasses.filter((c) => c.status === "ongoing").length} live now`}
           />
-          <StatCard label="Attendance Rate" value={`${attRate}%`} icon="checkmark-done-circle-outline" color="#3B82F6" sub="This week" />
+          <StatCard label="Attendance Rate" value={`${attRate}%`} icon="checkmark-done-circle-outline" color="#10B981" sub="This week" />
           <StatCard
             label="Outstanding Fees"
             value={outstandingPayments}

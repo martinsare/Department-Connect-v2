@@ -33,7 +33,7 @@ const CATEGORY_ICONS: Record<NotificationCategory, keyof typeof Ionicons.glyphMa
 };
 
 const CATEGORY_COLORS: Record<NotificationCategory, string> = {
-  lectures: "#3B82F6",
+  lectures: "#7C3AED",
   big_events: "#F59E0B",
   small_events: "#8B5CF6",
   extras: "#10B981",

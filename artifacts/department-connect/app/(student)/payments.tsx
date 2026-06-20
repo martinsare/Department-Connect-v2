@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -121,10 +122,18 @@ function PaymentModal({
 
   return (
     <Modal visible animationType="slide" transparent onRequestClose={step === "form" ? onClose : undefined}>
-      <View style={modalStyles.overlay}>
+      <KeyboardAvoidingView
+        style={modalStyles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <View style={[modalStyles.sheet, { backgroundColor: colors.card }]}>
           {step === "form" && (
-            <>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+              contentContainerStyle={{ paddingBottom: 16 }}
+            >
               <View style={modalStyles.header}>
                 <View>
                   <Text style={[modalStyles.title, { color: colors.foreground }]}>Pay with Card</Text>
@@ -195,7 +204,7 @@ function PaymentModal({
               </View>
 
               <TouchableOpacity
-                style={[modalStyles.payBtn, { backgroundColor: canPay ? colors.primary : colors.muted, opacity: canPay ? 1 : 0.6 }]}
+                style={[modalStyles.payBtn, { backgroundColor: canPay ? colors.primary : colors.muted, opacity: canPay ? 1 : 0.6, marginTop: 24 }]}
                 onPress={() => {
                   if (!canPay) return;
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -207,7 +216,7 @@ function PaymentModal({
                 <Ionicons name="lock-closed" size={16} color="#fff" />
                 <Text style={modalStyles.payBtnText}>Pay ₦{contribution.amount.toLocaleString()}</Text>
               </TouchableOpacity>
-            </>
+            </ScrollView>
           )}
 
           {step === "processing" && (
@@ -227,7 +236,7 @@ function PaymentModal({
 
           {step === "success" && <SuccessAnimation visible />}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

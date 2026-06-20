@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     right: 8,
     bottom: 0,
     borderRadius: 20,
-    backgroundColor: "#3B82F6",
+    backgroundColor: "#7C3AED",
     opacity: 0.3,
     zIndex: -1,
   },

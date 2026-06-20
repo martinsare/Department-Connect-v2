@@ -10,7 +10,7 @@ import { useColors } from "@/hooks/useColors";
 type RoleFilter = "all" | "student" | "admin" | "developer";
 
 const ROLE_COLORS: Record<string, string> = {
-  student: "#3B82F6",
+  student: "#7C3AED",
   admin: "#F59E0B",
   developer: "#8B5CF6",
 };

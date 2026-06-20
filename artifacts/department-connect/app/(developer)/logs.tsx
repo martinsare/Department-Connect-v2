@@ -17,7 +17,7 @@ const ACTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  Student: "#3B82F6",
+  Student: "#7C3AED",
   Admin: "#F59E0B",
   Lecturer: "#F59E0B",
   "Course Rep": "#F59E0B",
