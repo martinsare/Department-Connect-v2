@@ -547,6 +547,12 @@ const CONTRIBUTIONS: Contribution[] = [
     bankName: "Access Bank",
     accountNumber: "0987654321",
     accountName: "CS Dept Materials Fund",
+    submittedBy: {
+      name: "Tolu Adeyemi",
+      matricNumber: "ART2500001",
+      level: "300L",
+    },
+    submittedAt: "2026-06-20T08:30:00.000Z",
   },
   {
     id: "c4",
