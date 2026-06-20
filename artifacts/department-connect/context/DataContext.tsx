@@ -69,6 +69,13 @@ export interface AppNotification {
   priority: "high" | "normal";
 }
 
+export interface ContributionSubmitter {
+  name: string;
+  matricNumber: string;
+  level: string;
+  profilePicture?: string;
+}
+
 export interface Contribution {
   id: string;
   title: string;
@@ -82,6 +89,8 @@ export interface Contribution {
   accountNumber: string;
   accountName: string;
   rejectionReason?: string;
+  submittedBy?: ContributionSubmitter;
+  submittedAt?: string;
 }
 
 export interface AppEvent {
@@ -635,7 +644,7 @@ interface DataContextValue {
   classAttendees: Record<string, ClassAttendee[]>;
   markAttendance: (classId: string, attendee: ClassAttendee) => void;
   attendedClasses: string[];
-  submitPayment: (id: string) => void;
+  submitPayment: (id: string, submitter: ContributionSubmitter) => void;
   confirmPayment: (id: string) => void;
   rejectPayment: (id: string, reason: string) => void;
   createContribution: (contribution: Omit<Contribution, "id" | "status" | "paidDate">) => void;
@@ -697,9 +706,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   /* Student marks transfer done — status goes Pending */
-  const submitPayment = (id: string) => {
+  const submitPayment = (id: string, submitter: ContributionSubmitter) => {
+    const now = new Date().toISOString();
     setContributions((prev) =>
-      prev.map((c) => c.id === id ? { ...c, status: "pending" as ContributionStatus } : c)
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, status: "pending" as ContributionStatus, submittedBy: submitter, submittedAt: now }
+          : c
+      )
     );
     const item = contributions.find((c) => c.id === id);
     if (item) {

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Alert,
+  Image,
   Modal,
   Platform,
   ScrollView,
@@ -268,6 +269,24 @@ const rm = StyleSheet.create({
   btnText: { fontSize: 15, fontFamily: "Inter_700Bold" },
 });
 
+/* ── Student Avatar ── */
+function StudentAvatar({ name, profilePicture, size = 40 }: { name: string; profilePicture?: string; size?: number }) {
+  const initials = name.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+  if (profilePicture) {
+    return (
+      <Image
+        source={{ uri: profilePicture }}
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#7C3AED20" }}
+      />
+    );
+  }
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#7C3AED", alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ color: "#fff", fontSize: size * 0.36, fontFamily: "Inter_700Bold" }}>{initials}</Text>
+    </View>
+  );
+}
+
 /* ── Contribution Item (admin view) ── */
 function ContributionItem({ item, onConfirm, onReject }: {
   item: Contribution;
@@ -284,8 +303,13 @@ function ContributionItem({ item, onConfirm, onReject }: {
   const sc = statusColors[item.status];
   const label = { unpaid: "Unpaid", pending: "Pending Review", confirmed: "Confirmed", rejected: "Rejected" }[item.status];
 
+  const submittedTime = item.submittedAt
+    ? new Date(item.submittedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   return (
     <View style={[itemS.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Title row */}
       <View style={itemS.top}>
         <View style={{ flex: 1 }}>
           <Text style={[itemS.title, { color: colors.foreground }]}>{item.title}</Text>
@@ -297,6 +321,29 @@ function ContributionItem({ item, onConfirm, onReject }: {
           <Text style={[itemS.badgeText, { color: sc.color }]}>{label}</Text>
         </View>
       </View>
+
+      {/* Student identity — shown when someone has submitted */}
+      {item.submittedBy && (
+        <View style={[itemS.studentRow, { backgroundColor: item.status === "pending" ? "#F3EEFF" : colors.muted, borderColor: item.status === "pending" ? "#DDD6FE" : colors.border }]}>
+          <StudentAvatar name={item.submittedBy.name} profilePicture={item.submittedBy.profilePicture} size={36} />
+          <View style={{ flex: 1 }}>
+            <Text style={[itemS.studentName, { color: colors.foreground }]}>{item.submittedBy.name}</Text>
+            <Text style={[itemS.studentMeta, { color: colors.mutedForeground }]}>
+              {item.submittedBy.matricNumber} · {item.submittedBy.level}
+              {submittedTime ? ` · submitted ${submittedTime}` : ""}
+            </Text>
+          </View>
+          {item.status === "pending" && (
+            <View style={itemS.claimBadge}>
+              <Ionicons name="time-outline" size={12} color="#7C3AED" />
+              <Text style={itemS.claimText}>Awaiting review</Text>
+            </View>
+          )}
+          {item.status === "confirmed" && (
+            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+          )}
+        </View>
+      )}
 
       {/* Bank details summary */}
       <View style={[itemS.bankRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
@@ -337,6 +384,14 @@ const itemS = StyleSheet.create({
   meta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 3 },
   badge: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, alignSelf: "flex-start" },
   badgeText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  studentRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    borderRadius: 12, borderWidth: 1, padding: 10,
+  },
+  studentName: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  studentMeta: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
+  claimBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#EDE9FE", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  claimText: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
   bankRow: {
     flexDirection: "row", alignItems: "center", gap: 8,
     borderRadius: 10, borderWidth: 1, padding: 10,

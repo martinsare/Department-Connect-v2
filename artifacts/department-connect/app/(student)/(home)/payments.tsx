@@ -419,7 +419,12 @@ export default function PaymentsScreen() {
           contribution={payingItem}
           onClose={() => setPayingItem(null)}
           onPaid={() => {
-            submitPayment(payingItem.id);
+            submitPayment(payingItem.id, {
+              name: `${user?.firstName ?? ""} ${user?.surname ?? ""}`.trim(),
+              matricNumber: user?.matricNumber ?? "",
+              level: user?.level ?? "",
+              profilePicture: user?.profilePicture,
+            });
             setPayingItem(null);
           }}
         />
