@@ -19,8 +19,13 @@ import { useData, type StudentStatus } from "@/context/DataContext";
 import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
 
-const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L"];
-const LEVEL_OPTIONS = ["100L", "200L", "300L", "400L", "500L"];
+const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L", "Graduated"];
+const LEVEL_OPTIONS = ["100L", "200L", "300L", "400L", "500L", "Graduated"];
+const BULK_FROM_OPTIONS = ["500L", "400L", "300L", "200L", "100L"]; // reversed: clear top first
+const BULK_TO_OPTIONS = ["100L", "200L", "300L", "400L", "500L", "Graduated"];
+const NEXT_LEVEL: Record<string, string> = {
+  "100L": "200L", "200L": "300L", "300L": "400L", "400L": "500L", "500L": "Graduated",
+};
 
 const STATUS_COLORS: Record<StudentStatus, string> = {
   active: "#10B981",
@@ -50,8 +55,8 @@ export default function StudentsScreen() {
   const [showAdd, setShowAdd] = useState(false);
   const [detailStudent, setDetailStudent] = useState<typeof students[0] | null>(null);
   const [showBulk, setShowBulk] = useState(false);
-  const [bulkFrom, setBulkFrom] = useState("300L");
-  const [bulkTo, setBulkTo] = useState("400L");
+  const [bulkFrom, setBulkFrom] = useState("500L");
+  const [bulkTo, setBulkTo] = useState("Graduated");
 
   const bulkAffectedCount = students.filter(
     (s) => s.level === bulkFrom && s.status === "active"
@@ -247,7 +252,7 @@ export default function StudentsScreen() {
                 <Text style={[styles.studentName, { color: colors.foreground }]}>{s.firstName} {s.surname}</Text>
                 <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>{s.matricNumber}  ·  {formatDob(s.dob, s.hideYear ?? true)}</Text>
                 <View style={styles.studentBottom}>
-                  <Text style={[styles.studentLevel, { color: colors.primary }]}>{s.level}</Text>
+                  <Text style={[styles.studentLevel, { color: s.level === "Graduated" ? "#6366F1" : colors.primary }]}>{s.level}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
                     <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
                     <Text style={[styles.statusText, { color: statusColor }]}>{s.status}</Text>
@@ -290,7 +295,7 @@ export default function StudentsScreen() {
                       <Text style={[styles.statusText, { color: sc, fontSize: 13 }]}>{detailStudent.status.charAt(0).toUpperCase() + detailStudent.status.slice(1)}</Text>
                     </View>
                     <View style={{ flex: 1 }} />
-                    <Text style={{ fontSize: 13, fontFamily: "Inter_700Bold", color: colors.primary }}>{detailStudent.level}</Text>
+                    <Text style={{ fontSize: 13, fontFamily: "Inter_700Bold", color: detailStudent.level === "Graduated" ? "#6366F1" : colors.primary }}>{detailStudent.level}</Text>
                     <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.mutedForeground }}>· {detailStudent.department}</Text>
                   </View>
 
@@ -320,14 +325,19 @@ export default function StudentsScreen() {
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                       {LEVEL_OPTIONS.map((l) => {
                         const isCurrentLevel = detailStudent.level === l;
+                        const isGrad = l === "Graduated";
                         return (
                           <TouchableOpacity
                             key={l}
                             style={[
                               addStyles.levelChip,
                               {
-                                backgroundColor: isCurrentLevel ? colors.primary : colors.muted,
-                                borderColor: isCurrentLevel ? colors.primary : colors.border,
+                                backgroundColor: isCurrentLevel
+                                  ? (isGrad ? "#6366F1" : colors.primary)
+                                  : colors.muted,
+                                borderColor: isCurrentLevel
+                                  ? (isGrad ? "#6366F1" : colors.primary)
+                                  : colors.border,
                               },
                             ]}
                             onPress={() => {
@@ -339,9 +349,8 @@ export default function StudentsScreen() {
                             }}
                             activeOpacity={0.8}
                           >
-                            {isCurrentLevel && (
-                              <Ionicons name="checkmark" size={12} color="#fff" />
-                            )}
+                            {isCurrentLevel && <Ionicons name="checkmark" size={12} color="#fff" />}
+                            {isGrad && !isCurrentLevel && <Ionicons name="school-outline" size={11} color={colors.mutedForeground} style={{ marginRight: 2 }} />}
                             <Text style={[addStyles.levelChipText, { color: isCurrentLevel ? "#fff" : colors.mutedForeground }]}>{l}</Text>
                           </TouchableOpacity>
                         );
@@ -381,10 +390,13 @@ export default function StudentsScreen() {
               Move all active students from one level to another in a single action — ideal for end-of-year progression.
             </Text>
 
-            {/* From level */}
-            <Text style={[addStyles.label, { color: colors.mutedForeground, marginBottom: 8 }]}>From level</Text>
+            {/* From level — reversed so admins naturally start at the top */}
+            <Text style={[addStyles.label, { color: colors.mutedForeground, marginBottom: 4 }]}>From level</Text>
+            <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginBottom: 8 }}>
+              Start from the top — promote 500L first so you don't fill a level before clearing it
+            </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
-              {LEVEL_OPTIONS.map((l) => {
+              {BULK_FROM_OPTIONS.map((l) => {
                 const sel = bulkFrom === l;
                 const cnt = students.filter((s) => s.level === l && s.status === "active").length;
                 return (
@@ -394,7 +406,7 @@ export default function StudentsScreen() {
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setBulkFrom(l);
-                      if (bulkTo === l) setBulkTo(LEVEL_OPTIONS.find((x) => x !== l) ?? "100L");
+                      setBulkTo(NEXT_LEVEL[l] ?? "Graduated");
                     }}
                     activeOpacity={0.8}
                   >
@@ -408,18 +420,24 @@ export default function StudentsScreen() {
             {/* To level */}
             <Text style={[addStyles.label, { color: colors.mutedForeground, marginBottom: 8 }]}>To level</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
-              {LEVEL_OPTIONS.filter((l) => l !== bulkFrom).map((l) => {
+              {BULK_TO_OPTIONS.filter((l) => l !== bulkFrom).map((l) => {
                 const sel = bulkTo === l;
+                const isGrad = l === "Graduated";
                 return (
                   <TouchableOpacity
                     key={l}
-                    style={[addStyles.levelChip, { backgroundColor: sel ? "#10B981" : colors.muted, borderColor: sel ? "#10B981" : colors.border, paddingHorizontal: 14 }]}
+                    style={[addStyles.levelChip, {
+                      backgroundColor: sel ? (isGrad ? "#6366F1" : "#10B981") : colors.muted,
+                      borderColor: sel ? (isGrad ? "#6366F1" : "#10B981") : colors.border,
+                      paddingHorizontal: 14,
+                    }]}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setBulkTo(l);
                     }}
                     activeOpacity={0.8}
                   >
+                    {isGrad && <Ionicons name="school-outline" size={12} color={sel ? "#fff" : colors.mutedForeground} style={{ marginRight: 4 }} />}
                     <Text style={[addStyles.levelChipText, { color: sel ? "#fff" : colors.mutedForeground }]}>{l}</Text>
                   </TouchableOpacity>
                 );
