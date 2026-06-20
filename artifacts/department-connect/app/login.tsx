@@ -98,16 +98,17 @@ export default function LoginScreen() {
   }
 
   return (
-    <LinearGradient colors={["#0D0720", "#2D1B69", "#7C3AED"]} style={styles.gradient}>
+    <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={styles.gradient}>
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={[styles.hero, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
-          <View style={styles.logoContainer}>
-            <Image source={require("../assets/images/icon.png")} style={styles.logo} resizeMode="cover" />
-            <View style={styles.logoGlow} />
+          <View style={styles.logoOuter}>
+            <View style={styles.logoCircle}>
+              <Image source={require("../assets/images/icon.png")} style={styles.logo} resizeMode="cover" />
+            </View>
           </View>
           <Text style={styles.appName}>Department Connect</Text>
           <Text style={styles.tagline}>Your Academic Community</Text>
@@ -223,25 +224,31 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: 24 },
-  hero: { alignItems: "center", marginBottom: 36 },
-  logoContainer: { position: "relative", marginBottom: 16 },
-  logo: {
-    width: 88,
-    height: 88,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.3)",
+  hero: { alignItems: "center", marginBottom: 32 },
+  logoOuter: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: "rgba(124,58,237,0.22)",
+    borderWidth: 1.5,
+    borderColor: "rgba(167,139,250,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
   },
-  logoGlow: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    right: 8,
-    bottom: 0,
-    borderRadius: 20,
-    backgroundColor: "#7C3AED",
-    opacity: 0.3,
-    zIndex: -1,
+  logoCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#F5F3FF",
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logo: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
   },
   appName: {
     fontSize: 28,

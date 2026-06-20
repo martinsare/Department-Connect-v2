@@ -47,32 +47,31 @@ const SLIDES = [
   },
 ];
 
+const ILLUS_HEIGHT = SCREEN_H * 0.50;
+const BOTTOM_HEIGHT = SCREEN_H - ILLUS_HEIGHT;
+
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
-  const botPad = insets.bottom + 24;
+  const botPad = insets.bottom + 20;
 
   const goToSlide = (index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.sequence([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: false }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: false }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 100, useNativeDriver: false }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: false }),
     ]).start();
     scrollRef.current?.scrollTo({ x: index * SCREEN_W, animated: true });
     setActiveIndex(index);
   };
 
   const handleNext = () => {
-    if (activeIndex < SLIDES.length - 1) {
-      goToSlide(activeIndex + 1);
-    } else {
-      handleGetStarted();
-    }
+    if (activeIndex < SLIDES.length - 1) goToSlide(activeIndex + 1);
+    else handleGetStarted();
   };
 
   const handleGetStarted = async () => {
@@ -83,52 +82,56 @@ export default function OnboardingScreen() {
 
   const handleScroll = (e: any) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
-    if (idx !== activeIndex) {
-      setActiveIndex(idx);
-    }
+    if (idx !== activeIndex) setActiveIndex(idx);
   };
 
   const slide = SLIDES[activeIndex];
   const isLast = activeIndex === SLIDES.length - 1;
 
   return (
-    <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={styles.root}>
-      {/* Skip button */}
-      <View style={[styles.topBar, { paddingTop: topPad + 8 }]}>
-        <View />
-        {!isLast && (
-          <TouchableOpacity onPress={handleGetStarted} style={styles.skipBtn} activeOpacity={0.7}>
-            <Text style={styles.skipText}>Skip</Text>
-            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.6)" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Scrollable illustration area */}
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={handleScroll}
-        scrollEventThrottle={16}
-        style={styles.illustrationScroll}
-        contentContainerStyle={{ alignItems: "center" }}
+    <View style={styles.root}>
+      {/* Purple gradient — top illustration zone */}
+      <LinearGradient
+        colors={["#0D0720", "#2D1B69", "#4C1D95"]}
+        style={[styles.purpleZone, { paddingTop: topPad }]}
       >
-        {SLIDES.map((s, i) => (
-          <View key={i} style={styles.illustrationSlide}>
-            <Image source={s.image} style={styles.illustration} resizeMode="contain" />
-          </View>
-        ))}
-      </ScrollView>
+        {/* Skip */}
+        <View style={styles.topBar}>
+          <View />
+          {!isLast && (
+            <TouchableOpacity onPress={handleGetStarted} style={styles.skipBtn} activeOpacity={0.7}>
+              <Text style={styles.skipText}>Skip</Text>
+              <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.7)" />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Bottom content */}
-      <Animated.View style={[styles.bottomContent, { paddingBottom: botPad, opacity: fadeAnim }]}>
+        {/* Illustrations */}
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleScroll}
+          scrollEventThrottle={16}
+          style={styles.illustrationScroll}
+          contentContainerStyle={{ alignItems: "center" }}
+        >
+          {SLIDES.map((s, i) => (
+            <View key={i} style={styles.illustrationSlide}>
+              <Image source={s.image} style={styles.illustration} resizeMode="contain" />
+            </View>
+          ))}
+        </ScrollView>
+      </LinearGradient>
+
+      {/* White bottom panel */}
+      <Animated.View style={[styles.whitePanel, { paddingBottom: botPad, opacity: fadeAnim }]}>
         {/* Dots */}
         <View style={styles.dots}>
           {SLIDES.map((_, i) => (
             <TouchableOpacity key={i} onPress={() => goToSlide(i)} activeOpacity={0.7}>
-              <Animated.View style={[styles.dot, i === activeIndex && styles.dotActive]} />
+              <View style={[styles.dot, i === activeIndex && styles.dotActive]} />
             </TouchableOpacity>
           ))}
         </View>
@@ -139,7 +142,7 @@ export default function OnboardingScreen() {
         {/* Subtitle */}
         <Text style={styles.subtitle}>{slide.subtitle}</Text>
 
-        {/* Action button */}
+        {/* Next / Get Started */}
         <TouchableOpacity
           style={[styles.nextBtn, { backgroundColor: slide.accent }]}
           onPress={handleNext}
@@ -158,74 +161,138 @@ export default function OnboardingScreen() {
           )}
         </TouchableOpacity>
 
+        {/* Sign in link */}
         {isLast && (
-          <TouchableOpacity onPress={() => router.push("/login")} style={styles.signinLink} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => router.push("/login")}
+            style={styles.signinLink}
+            activeOpacity={0.7}
+          >
             <Text style={styles.signinLinkText}>Already have an account? </Text>
             <Text style={styles.signinLinkAccent}>Sign In</Text>
           </TouchableOpacity>
         )}
       </Animated.View>
-    </LinearGradient>
+    </View>
   );
 }
 
-const ILLUS_HEIGHT = SCREEN_H * 0.46;
-
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: "#fff" },
+
+  /* Purple top zone */
+  purpleZone: {
+    height: ILLUS_HEIGHT,
+  },
   topBar: {
-    paddingHorizontal: 24, flexDirection: "row",
-    alignItems: "center", justifyContent: "flex-end",
+    paddingHorizontal: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginBottom: 8,
   },
   skipBtn: {
-    flexDirection: "row", alignItems: "center", gap: 2,
-    backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 20,
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
   },
-  skipText: { color: "rgba(255,255,255,0.7)", fontFamily: "Inter_600SemiBold", fontSize: 13 },
-  illustrationScroll: { height: ILLUS_HEIGHT, flexGrow: 0 },
+  skipText: {
+    color: "rgba(255,255,255,0.8)",
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 13,
+  },
+  illustrationScroll: { flex: 1, flexGrow: 0 },
   illustrationSlide: {
-    width: SCREEN_W, height: ILLUS_HEIGHT,
-    alignItems: "center", justifyContent: "center",
+    width: SCREEN_W,
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   illustration: {
     width: SCREEN_W * 0.82,
-    height: ILLUS_HEIGHT,
+    height: "100%",
   },
-  bottomContent: {
-    flex: 1, paddingHorizontal: 28, paddingTop: 12, justifyContent: "flex-end",
-  },
-  title: {
-    fontSize: 30, fontFamily: "Inter_700Bold",
-    color: "#fff", lineHeight: 38, marginBottom: 10, marginTop: 8,
-  },
-  subtitle: {
-    fontSize: 15, fontFamily: "Inter_400Regular",
-    color: "rgba(255,255,255,0.65)", lineHeight: 24, marginBottom: 28,
-  },
-  dots: { flexDirection: "row", gap: 8, marginBottom: 4 },
-  dot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.25)",
-  },
-  dotActive: {
-    width: 28, height: 8, borderRadius: 4,
-    backgroundColor: "#7C3AED",
-  },
-  nextBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 10, borderRadius: 16, paddingVertical: 16, marginBottom: 16,
-    boxShadow: "0px 8px 20px rgba(124,58,237,0.4)",
+
+  /* White bottom panel */
+  whitePanel: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 28,
+    paddingTop: 24,
+    marginTop: -28,
+    boxShadow: "0px -4px 20px rgba(45,27,105,0.12)",
     elevation: 8,
   },
-  nextBtnText: { color: "#fff", fontSize: 17, fontFamily: "Inter_700Bold" },
-  signinLink: {
-    flexDirection: "row", justifyContent: "center", alignItems: "center",
-    marginBottom: 8,
+
+  /* Dots */
+  dots: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E2E8F0",
   },
-  signinLinkText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)" },
-  signinLinkAccent: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#A78BFA" },
+  dotActive: {
+    width: 28,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#7C3AED",
+  },
+
+  /* Text */
+  title: {
+    fontSize: 28,
+    fontFamily: "Inter_700Bold",
+    color: "#0F172A",
+    lineHeight: 36,
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: "#64748B",
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+
+  /* Button */
+  nextBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: 16,
+    paddingVertical: 16,
+    marginBottom: 14,
+    boxShadow: "0px 6px 18px rgba(124,58,237,0.35)",
+    elevation: 6,
+  },
+  nextBtnText: { color: "#fff", fontSize: 17, fontFamily: "Inter_700Bold" },
+
+  /* Sign in */
+  signinLink: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  signinLinkText: {
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+    color: "#94A3B8",
+  },
+  signinLinkAccent: {
+    fontSize: 14,
+    fontFamily: "Inter_700Bold",
+    color: "#7C3AED",
+  },
 });
 
 export { ONBOARDING_KEY };
