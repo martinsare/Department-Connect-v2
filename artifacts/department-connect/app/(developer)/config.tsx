@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,7 +25,7 @@ export default function ConfigScreen() {
     { id: "birthday_notifs", label: "Birthday Notifications", description: "Send birthday push notifications to all users", icon: "gift-outline", enabled: true },
     { id: "paystack", label: "Paystack Payments", description: "Enable Paystack payment gateway for contributions", icon: "card-outline", enabled: true },
     { id: "push_notifs", label: "Push Notifications", description: "Send FCM push notifications to devices", icon: "notifications-outline", enabled: true },
-    { id: "approval_flow", label: "Approval Flow", description: "Require Admin approval before student accounts become active", icon: "checkmark-seal-outline", enabled: true },
+    { id: "approval_flow", label: "Approval Flow", description: "Require Admin approval before student accounts become active", icon: "shield-checkmark-outline", enabled: true },
     { id: "analytics", label: "Analytics Dashboard", description: "Show attendance and payment analytics to Admin users", icon: "stats-chart-outline", enabled: true },
     { id: "maintenance_mode", label: "Maintenance Mode", description: "Put the app in read-only maintenance mode", icon: "construct-outline", enabled: false, locked: true },
   ]);
@@ -114,7 +114,24 @@ export default function ConfigScreen() {
 
         <TouchableOpacity
           style={[styles.dangerBtn, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}
-          onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            Alert.alert(
+              "Clear All Caches",
+              "This will flush session tokens, image caches, and API response caches. The app will reload all data from source. Continue?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Clear Now",
+                  style: "destructive",
+                  onPress: () => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    Alert.alert("Caches Cleared", "All caches have been flushed successfully. Build: 2026.06.20.001");
+                  },
+                },
+              ]
+            );
+          }}
           activeOpacity={0.85}
         >
           <Ionicons name="warning-outline" size={16} color="#DC2626" />

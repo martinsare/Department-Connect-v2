@@ -47,6 +47,7 @@ export default function StudentsScreen() {
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
+  const [detailStudent, setDetailStudent] = useState<typeof students[0] | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
@@ -219,7 +220,11 @@ export default function StudentsScreen() {
         renderItem={({ item: s }) => {
           const statusColor = STATUS_COLORS[s.status];
           return (
-            <View style={[styles.studentCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.studentCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setDetailStudent(s); }}
+              activeOpacity={0.85}
+            >
               <View style={[styles.avatar, { backgroundColor: colors.secondary }]}>
                 <Text style={[styles.avatarText, { color: colors.primary }]}>{s.firstName[0]}{s.surname[0]}</Text>
               </View>
@@ -234,11 +239,77 @@ export default function StudentsScreen() {
                   </View>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.border} />
-            </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
           );
         }}
       />
+
+      {/* Student Detail Modal */}
+      <Modal visible={!!detailStudent} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setDetailStudent(null)}>
+        <View style={addStyles.overlay}>
+          <View style={[addStyles.sheet, { backgroundColor: colors.card }]}>
+            <View style={[{ width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 20, backgroundColor: colors.border }]} />
+            {detailStudent && (() => {
+              const sc = STATUS_COLORS[detailStudent.status];
+              const initials = `${detailStudent.firstName[0]}${detailStudent.surname[0]}`;
+              return (
+                <>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 20 }}>
+                    <View style={[styles.avatar, { backgroundColor: colors.secondary, width: 56, height: 56, borderRadius: 28 }]}>
+                      <Text style={[styles.avatarText, { color: colors.primary, fontSize: 20 }]}>{initials}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: colors.foreground }}>{detailStudent.firstName} {detailStudent.surname}</Text>
+                      <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginTop: 2 }}>{detailStudent.matricNumber}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => setDetailStudent(null)}>
+                      <Ionicons name="close" size={22} color={colors.mutedForeground} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Status badge */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 20 }}>
+                    <View style={[styles.statusBadge, { backgroundColor: sc + "20", paddingHorizontal: 12, paddingVertical: 6 }]}>
+                      <View style={[styles.statusDot, { backgroundColor: sc }]} />
+                      <Text style={[styles.statusText, { color: sc, fontSize: 13 }]}>{detailStudent.status.charAt(0).toUpperCase() + detailStudent.status.slice(1)}</Text>
+                    </View>
+                    <View style={{ flex: 1 }} />
+                    <Text style={{ fontSize: 13, fontFamily: "Inter_700Bold", color: colors.primary }}>{detailStudent.level}</Text>
+                    <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.mutedForeground }}>· {detailStudent.department}</Text>
+                  </View>
+
+                  {/* Info rows */}
+                  {[
+                    { label: "Date of Birth", value: detailStudent.dob, icon: "calendar-outline" as const },
+                    { label: "Phone", value: detailStudent.phone || "—", icon: "call-outline" as const },
+                    { label: "Email", value: detailStudent.email || "—", icon: "mail-outline" as const },
+                    { label: "Submitted", value: detailStudent.submittedAt || "—", icon: "time-outline" as const },
+                  ].map((row, i, arr) => (
+                    <View key={row.label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: i < arr.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                      <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name={row.icon} size={16} color={colors.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.mutedForeground, textTransform: "uppercase", letterSpacing: 0.5 }}>{row.label}</Text>
+                        <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.foreground, marginTop: 2 }}>{row.value}</Text>
+                      </View>
+                    </View>
+                  ))}
+
+                  <TouchableOpacity
+                    style={{ marginTop: 24, borderRadius: 14, paddingVertical: 14, backgroundColor: colors.muted, alignItems: "center" }}
+                    onPress={() => setDetailStudent(null)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={{ fontSize: 15, fontFamily: "Inter_700Bold", color: colors.foreground }}>Close</Text>
+                  </TouchableOpacity>
+                </>
+              );
+            })()}
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={showAdd} transparent animationType="slide" onRequestClose={() => { setShowAdd(false); resetForm(); }}>
         <View style={addStyles.overlay}>
