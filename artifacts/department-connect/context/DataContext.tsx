@@ -621,6 +621,7 @@ interface DataContextValue {
   payContribution: (id: string) => void;
   addStudent: (student: Omit<StudentRecord, "id">) => void;
   updateStudentLevel: (id: string, level: string) => void;
+  bulkUpdateLevel: (fromLevel: string, toLevel: string) => number;
   createEvent: (event: Omit<AppEvent, "id">) => void;
   createClass: (cls: Omit<ClassSession, "id">) => void;
   toggleAttendanceOpen: (classId: string) => void;
@@ -705,6 +706,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setStudents((prev) => prev.map((s) => s.id === id ? { ...s, level } : s));
   };
 
+  const bulkUpdateLevel = (fromLevel: string, toLevel: string): number => {
+    let count = 0;
+    setStudents((prev) =>
+      prev.map((s) => {
+        if (s.level === fromLevel && s.status === "active") {
+          count++;
+          return { ...s, level: toLevel };
+        }
+        return s;
+      })
+    );
+    return count;
+  };
+
   const createEvent = (event: Omit<AppEvent, "id">) => {
     const id = `e${Date.now()}`;
     setEvents((prev) => [...prev, { ...event, id }]);
@@ -758,6 +773,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         payContribution,
         addStudent,
         updateStudentLevel,
+        bulkUpdateLevel,
         createEvent,
         createClass,
         toggleAttendanceOpen,

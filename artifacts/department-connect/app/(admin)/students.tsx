@@ -44,11 +44,18 @@ type FormErrors = {
 export default function StudentsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { students, addStudent, updateStudentLevel } = useData();
+  const { students, addStudent, updateStudentLevel, bulkUpdateLevel } = useData();
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
   const [detailStudent, setDetailStudent] = useState<typeof students[0] | null>(null);
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkFrom, setBulkFrom] = useState("300L");
+  const [bulkTo, setBulkTo] = useState("400L");
+
+  const bulkAffectedCount = students.filter(
+    (s) => s.level === bulkFrom && s.status === "active"
+  ).length;
 
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
@@ -145,17 +152,24 @@ export default function StudentsScreen() {
             <Text style={styles.title}>Students</Text>
             <Text style={styles.subtitle}>{students.length} total enrolled</Text>
           </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowAdd(true);
-            }}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="person-add-outline" size={18} color="#7C3AED" />
-            <Text style={styles.addBtnText}>Add</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.addBtn, { backgroundColor: "rgba(255,255,255,0.18)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)" }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowBulk(true); }}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="arrow-up-circle-outline" size={17} color="#fff" />
+              <Text style={[styles.addBtnText, { color: "#fff" }]}>Promote</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addBtn}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowAdd(true); }}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="person-add-outline" size={17} color="#7C3AED" />
+              <Text style={styles.addBtnText}>Add</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.searchBar}>
@@ -348,6 +362,114 @@ export default function StudentsScreen() {
                 </>
               );
             })()}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Bulk Promote Modal ── */}
+      <Modal visible={showBulk} transparent animationType="slide" onRequestClose={() => setShowBulk(false)}>
+        <View style={addStyles.overlay}>
+          <View style={[addStyles.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 24 }]}>
+            <View style={addStyles.header}>
+              <Text style={[addStyles.title, { color: colors.foreground }]}>Bulk Level Promotion</Text>
+              <TouchableOpacity onPress={() => setShowBulk(false)}>
+                <Ionicons name="close" size={22} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginBottom: 20, lineHeight: 20 }]}>
+              Move all active students from one level to another in a single action — ideal for end-of-year progression.
+            </Text>
+
+            {/* From level */}
+            <Text style={[addStyles.label, { color: colors.mutedForeground, marginBottom: 8 }]}>From level</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
+              {LEVEL_OPTIONS.map((l) => {
+                const sel = bulkFrom === l;
+                const cnt = students.filter((s) => s.level === l && s.status === "active").length;
+                return (
+                  <TouchableOpacity
+                    key={l}
+                    style={[addStyles.levelChip, { backgroundColor: sel ? "#7C3AED" : colors.muted, borderColor: sel ? "#7C3AED" : colors.border, paddingHorizontal: 14 }]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setBulkFrom(l);
+                      if (bulkTo === l) setBulkTo(LEVEL_OPTIONS.find((x) => x !== l) ?? "100L");
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[addStyles.levelChipText, { color: sel ? "#fff" : colors.mutedForeground }]}>{l}</Text>
+                    <Text style={{ fontSize: 10, fontFamily: "Inter_400Regular", color: sel ? "rgba(255,255,255,0.75)" : colors.mutedForeground, marginLeft: 4 }}>({cnt})</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* To level */}
+            <Text style={[addStyles.label, { color: colors.mutedForeground, marginBottom: 8 }]}>To level</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 24 }}>
+              {LEVEL_OPTIONS.filter((l) => l !== bulkFrom).map((l) => {
+                const sel = bulkTo === l;
+                return (
+                  <TouchableOpacity
+                    key={l}
+                    style={[addStyles.levelChip, { backgroundColor: sel ? "#10B981" : colors.muted, borderColor: sel ? "#10B981" : colors.border, paddingHorizontal: 14 }]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setBulkTo(l);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[addStyles.levelChipText, { color: sel ? "#fff" : colors.mutedForeground }]}>{l}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Preview banner */}
+            <View style={{ backgroundColor: bulkAffectedCount === 0 ? colors.muted : "#7C3AED18", borderRadius: 12, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: bulkAffectedCount === 0 ? colors.border : "#7C3AED40" }}>
+              {bulkAffectedCount === 0 ? (
+                <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: colors.mutedForeground, textAlign: "center" }}>
+                  No active students in {bulkFrom}
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 13, fontFamily: "Inter_500Medium", color: colors.primary, textAlign: "center", lineHeight: 20 }}>
+                  {bulkAffectedCount} active student{bulkAffectedCount !== 1 ? "s" : ""} will move{"\n"}
+                  <Text style={{ color: colors.foreground }}>{bulkFrom}</Text>
+                  <Text style={{ color: colors.mutedForeground }}> → </Text>
+                  <Text style={{ color: colors.foreground }}>{bulkTo}</Text>
+                </Text>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={{ borderRadius: 14, paddingVertical: 15, alignItems: "center", backgroundColor: bulkAffectedCount === 0 ? colors.muted : "#7C3AED" }}
+              disabled={bulkAffectedCount === 0}
+              activeOpacity={0.85}
+              onPress={() => {
+                Alert.alert(
+                  "Confirm Bulk Promotion",
+                  `Move ${bulkAffectedCount} active student${bulkAffectedCount !== 1 ? "s" : ""} from ${bulkFrom} to ${bulkTo}? This cannot be undone.`,
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Promote",
+                      style: "destructive",
+                      onPress: () => {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        const moved = bulkUpdateLevel(bulkFrom, bulkTo);
+                        setShowBulk(false);
+                        Alert.alert("Done", `${moved} student${moved !== 1 ? "s" : ""} moved to ${bulkTo}.`);
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Text style={{ fontSize: 15, fontFamily: "Inter_600SemiBold", color: bulkAffectedCount === 0 ? colors.mutedForeground : "#fff" }}>
+                Promote {bulkAffectedCount > 0 ? `${bulkAffectedCount} Students` : "—"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
