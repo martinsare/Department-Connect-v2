@@ -1,14 +1,12 @@
 import React, { useRef, useState } from "react";
 import {
   Alert,
-  Animated,
-  KeyboardAvoidingView,
+  Clipboard,
   Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -20,341 +18,274 @@ import { useData, type Contribution } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
-type FilterTab = "all" | "unpaid" | "paid";
+type FilterTab = "all" | "unpaid" | "pending" | "confirmed";
 
-function SuccessAnimation({ visible }: { visible: boolean }) {
-  const scale = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const checkScale = useRef(new Animated.Value(0)).current;
+/* ── Status helpers ── */
+const STATUS_CONFIG = {
+  unpaid:    { label: "Unpaid",    color: "#F59E0B", bg: "#FEF3C7", icon: "card-outline"          as const },
+  pending:   { label: "Pending",   color: "#7C3AED", bg: "#F3EEFF", icon: "time-outline"           as const },
+  confirmed: { label: "Confirmed", color: "#10B981", bg: "#D1FAE5", icon: "checkmark-circle"       as const },
+  rejected:  { label: "Rejected",  color: "#EF4444", bg: "#FEE2E2", icon: "close-circle-outline"   as const },
+};
 
-  React.useEffect(() => {
-    if (visible) {
-      Animated.sequence([
-        Animated.parallel([
-          Animated.spring(scale, { toValue: 1, useNativeDriver: false, tension: 80, friction: 6 }),
-          Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: false }),
-        ]),
-        Animated.spring(checkScale, { toValue: 1, useNativeDriver: false, tension: 100, friction: 5 }),
-      ]).start();
-    } else {
-      scale.setValue(0);
-      opacity.setValue(0);
-      checkScale.setValue(0);
-    }
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <Animated.View style={[successStyles.container, { opacity }]}>
-      <Animated.View style={[successStyles.circle, { transform: [{ scale }] }]}>
-        <Animated.View style={{ transform: [{ scale: checkScale }] }}>
-          <Ionicons name="checkmark" size={52} color="#fff" />
-        </Animated.View>
-      </Animated.View>
-      <Animated.Text style={[successStyles.title, { opacity }]}>Payment Successful!</Animated.Text>
-      <Animated.Text style={[successStyles.sub, { opacity }]}>Receipt has been saved to your inbox</Animated.Text>
-    </Animated.View>
-  );
-}
-
-const successStyles = StyleSheet.create({
-  container: { alignItems: "center", paddingVertical: 32, gap: 16 },
-  circle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#10B981",
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: "0px 8px 16px rgba(16,185,129,0.4)",
-    elevation: 10,
-  },
-  title: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#0F172A" },
-  sub: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B", textAlign: "center" },
-});
-
-function PaymentModal({
+/* ── Bank Transfer Modal ── */
+function BankTransferModal({
   contribution,
   onClose,
-  onSuccess,
+  onPaid,
 }: {
   contribution: Contribution;
   onClose: () => void;
-  onSuccess: () => void;
+  onPaid: () => void;
 }) {
   const colors = useColors();
-  const [step, setStep] = useState<"form" | "processing" | "success">("form");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [name, setName] = useState("");
-  const dotAnim = useRef(new Animated.Value(0)).current;
+  const [copied, setCopied] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
-  React.useEffect(() => {
-    if (step === "processing") {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(dotAnim, { toValue: 1, duration: 600, useNativeDriver: false }),
-          Animated.timing(dotAnim, { toValue: 0, duration: 600, useNativeDriver: false }),
-        ])
-      ).start();
-      setTimeout(() => {
-        setStep("success");
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setTimeout(onSuccess, 2500);
-      }, 2000);
-    }
-  }, [step]);
-
-  const formatCard = (v: string) => {
-    const digits = v.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(.{4})/g, "$1 ").trim();
+  const copyAccount = () => {
+    Clipboard.setString(contribution.accountNumber);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const formatExpiry = (v: string) => {
-    const digits = v.replace(/\D/g, "").slice(0, 4);
-    if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
+  const handlePaid = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setConfirmed(true);
+    setTimeout(() => {
+      onPaid();
+    }, 1200);
   };
-
-  const canPay = cardNumber.replace(/\s/g, "").length === 16 && expiry.length === 5 && cvv.length >= 3 && name.trim().length > 2;
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={step === "form" ? onClose : undefined}>
-      <KeyboardAvoidingView
-        style={modalStyles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <View style={[modalStyles.sheet, { backgroundColor: colors.card }]}>
-          {step === "form" && (
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              bounces={false}
-              contentContainerStyle={{ paddingBottom: 16 }}
-            >
-              <View style={modalStyles.header}>
-                <View>
-                  <Text style={[modalStyles.title, { color: colors.foreground }]}>Pay with Card</Text>
-                  <Text style={[modalStyles.subtitle, { color: colors.mutedForeground }]}>{contribution.title}</Text>
-                </View>
-                <TouchableOpacity onPress={onClose}>
-                  <Ionicons name="close" size={22} color={colors.mutedForeground} />
-                </TouchableOpacity>
+    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+      <View style={[mStyles.overlay]}>
+        <View style={[mStyles.sheet, { backgroundColor: colors.card }]}>
+          {/* Handle */}
+          <View style={[mStyles.handle, { backgroundColor: colors.border }]} />
+
+          {/* Header */}
+          <View style={mStyles.header}>
+            <View>
+              <Text style={[mStyles.title, { color: colors.foreground }]}>Bank Transfer</Text>
+              <Text style={[mStyles.subtitle, { color: colors.mutedForeground }]}>{contribution.title}</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} style={mStyles.closeBtn}>
+              <Ionicons name="close" size={20} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Amount */}
+          <View style={[mStyles.amountBox, { backgroundColor: "#7C3AED18" }]}>
+            <Text style={[mStyles.amountLabel, { color: colors.mutedForeground }]}>Amount to Transfer</Text>
+            <Text style={mStyles.amount}>₦{contribution.amount.toLocaleString()}</Text>
+          </View>
+
+          {/* Bank details */}
+          <View style={[mStyles.detailsCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+            <Text style={[mStyles.detailsTitle, { color: colors.foreground }]}>Transfer to this account</Text>
+
+            <View style={mStyles.detailRow}>
+              <Text style={[mStyles.detailLabel, { color: colors.mutedForeground }]}>Bank Name</Text>
+              <Text style={[mStyles.detailValue, { color: colors.foreground }]}>{contribution.bankName}</Text>
+            </View>
+
+            <View style={[mStyles.detailRow, mStyles.accountRow]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[mStyles.detailLabel, { color: colors.mutedForeground }]}>Account Number</Text>
+                <Text style={[mStyles.accountNumber, { color: colors.foreground }]}>{contribution.accountNumber}</Text>
               </View>
-
-              <View style={[modalStyles.amountBadge, { backgroundColor: colors.primary + "15" }]}>
-                <Text style={[modalStyles.amountLabel, { color: colors.mutedForeground }]}>Amount to Pay</Text>
-                <Text style={[modalStyles.amount, { color: colors.primary }]}>₦{contribution.amount.toLocaleString()}</Text>
-              </View>
-
-              <View style={[modalStyles.paystackBadge, { backgroundColor: "#00C3F7" + "15" }]}>
-                <Ionicons name="shield-checkmark" size={14} color="#00C3F7" />
-                <Text style={[modalStyles.paystackText, { color: "#00C3F7" }]}>Secured by Paystack</Text>
-              </View>
-
-              <Text style={[modalStyles.fieldLabel, { color: colors.mutedForeground }]}>Cardholder Name</Text>
-              <TextInput
-                style={[modalStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-                placeholder="Name on card"
-                placeholderTextColor={colors.mutedForeground}
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-              />
-
-              <Text style={[modalStyles.fieldLabel, { color: colors.mutedForeground }]}>Card Number</Text>
-              <TextInput
-                style={[modalStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-                placeholder="0000 0000 0000 0000"
-                placeholderTextColor={colors.mutedForeground}
-                value={cardNumber}
-                onChangeText={(v) => setCardNumber(formatCard(v))}
-                keyboardType="number-pad"
-                maxLength={19}
-              />
-
-              <View style={modalStyles.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[modalStyles.fieldLabel, { color: colors.mutedForeground }]}>Expiry</Text>
-                  <TextInput
-                    style={[modalStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-                    placeholder="MM/YY"
-                    placeholderTextColor={colors.mutedForeground}
-                    value={expiry}
-                    onChangeText={(v) => setExpiry(formatExpiry(v))}
-                    keyboardType="number-pad"
-                    maxLength={5}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[modalStyles.fieldLabel, { color: colors.mutedForeground }]}>CVV</Text>
-                  <TextInput
-                    style={[modalStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-                    placeholder="•••"
-                    placeholderTextColor={colors.mutedForeground}
-                    value={cvv}
-                    onChangeText={(v) => setCvv(v.replace(/\D/g, "").slice(0, 4))}
-                    keyboardType="number-pad"
-                    secureTextEntry
-                    maxLength={4}
-                  />
-                </View>
-              </View>
-
               <TouchableOpacity
-                style={[modalStyles.payBtn, { backgroundColor: canPay ? colors.primary : colors.muted, opacity: canPay ? 1 : 0.6, marginTop: 24 }]}
-                onPress={() => {
-                  if (!canPay) return;
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setStep("processing");
-                }}
-                activeOpacity={0.85}
-                disabled={!canPay}
+                style={[mStyles.copyBtn, { backgroundColor: copied ? "#10B98118" : "#7C3AED18", borderColor: copied ? "#10B981" : "#7C3AED" }]}
+                onPress={copyAccount}
+                activeOpacity={0.8}
               >
-                <Ionicons name="lock-closed" size={16} color="#fff" />
-                <Text style={modalStyles.payBtnText}>Pay ₦{contribution.amount.toLocaleString()}</Text>
+                <Ionicons name={copied ? "checkmark" : "copy-outline"} size={15} color={copied ? "#10B981" : "#7C3AED"} />
+                <Text style={[mStyles.copyText, { color: copied ? "#10B981" : "#7C3AED" }]}>
+                  {copied ? "Copied!" : "Copy"}
+                </Text>
               </TouchableOpacity>
-            </ScrollView>
-          )}
+            </View>
 
-          {step === "processing" && (
-            <View style={modalStyles.processingContainer}>
-              <View style={[modalStyles.processingCircle, { borderColor: colors.primary }]}>
-                <Ionicons name="card-outline" size={36} color={colors.primary} />
-              </View>
-              <Text style={[modalStyles.processingTitle, { color: colors.foreground }]}>Processing Payment</Text>
-              <Text style={[modalStyles.processingBody, { color: colors.mutedForeground }]}>
-                Please wait, do not close this screen...
-              </Text>
-              <Animated.Text style={[modalStyles.processingDots, { opacity: dotAnim, color: colors.primary }]}>
-                ● ● ●
-              </Animated.Text>
+            <View style={mStyles.detailRow}>
+              <Text style={[mStyles.detailLabel, { color: colors.mutedForeground }]}>Account Name</Text>
+              <Text style={[mStyles.detailValue, { color: colors.foreground }]}>{contribution.accountName}</Text>
+            </View>
+          </View>
+
+          {/* Instruction note */}
+          <View style={[mStyles.noteBox, { backgroundColor: "#FEF3C7", borderColor: "#F59E0B40" }]}>
+            <Ionicons name="information-circle-outline" size={16} color="#B45309" />
+            <Text style={mStyles.noteText}>
+              Transfer the exact amount and use your <Text style={{ fontFamily: "Inter_700Bold" }}>full name</Text> as the payment reference.
+            </Text>
+          </View>
+
+          {/* I Have Paid button */}
+          {!confirmed ? (
+            <TouchableOpacity style={mStyles.paidBtn} onPress={handlePaid} activeOpacity={0.85}>
+              <LinearGradient colors={["#7C3AED", "#5B21B6"]} style={mStyles.paidGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                <Ionicons name="checkmark-done-outline" size={18} color="#fff" />
+                <Text style={mStyles.paidBtnText}>I Have Paid</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          ) : (
+            <View style={[mStyles.paidBtn, { overflow: "hidden", borderRadius: 16 }]}>
+              <LinearGradient colors={["#10B981", "#059669"]} style={mStyles.paidGrad}>
+                <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                <Text style={mStyles.paidBtnText}>Submitted — Awaiting Confirmation</Text>
+              </LinearGradient>
             </View>
           )}
 
-          {step === "success" && <SuccessAnimation visible />}
+          <Text style={[mStyles.footNote, { color: colors.mutedForeground }]}>
+            Your payment will be marked as <Text style={{ fontFamily: "Inter_600SemiBold", color: "#7C3AED" }}>Pending</Text> until Admin confirms your transfer.
+          </Text>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
-const modalStyles = StyleSheet.create({
+const mStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
-  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 48 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 20 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
   title: { fontSize: 20, fontFamily: "Inter_700Bold" },
   subtitle: { fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 2 },
-  amountBadge: { borderRadius: 14, padding: 16, alignItems: "center", marginBottom: 12 },
-  amountLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  amount: { fontSize: 28, fontFamily: "Inter_700Bold", marginTop: 4 },
-  paystackBadge: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6,
-    alignSelf: "center", marginBottom: 20,
+  closeBtn: { padding: 4 },
+  amountBox: { borderRadius: 14, padding: 16, alignItems: "center", marginBottom: 16 },
+  amountLabel: { fontSize: 12, fontFamily: "Inter_400Regular", marginBottom: 4 },
+  amount: { fontSize: 30, fontFamily: "Inter_700Bold", color: "#7C3AED" },
+  detailsCard: {
+    borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 14, gap: 14,
   },
-  paystackText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  fieldLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 6, marginTop: 12 },
-  field: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, fontFamily: "Inter_400Regular" },
-  row: { flexDirection: "row", gap: 12 },
-  payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, paddingVertical: 16, marginTop: 24 },
-  payBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
-  processingContainer: { alignItems: "center", paddingVertical: 40, gap: 16 },
-  processingCircle: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, alignItems: "center", justifyContent: "center" },
-  processingTitle: { fontSize: 20, fontFamily: "Inter_700Bold" },
-  processingBody: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" },
-  processingDots: { fontSize: 18, letterSpacing: 4 },
+  detailsTitle: { fontSize: 13, fontFamily: "Inter_700Bold", marginBottom: 2 },
+  detailRow: {},
+  accountRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  detailLabel: { fontSize: 11, fontFamily: "Inter_400Regular", marginBottom: 3 },
+  detailValue: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  accountNumber: { fontSize: 20, fontFamily: "Inter_700Bold", letterSpacing: 1.5 },
+  copyBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
+  },
+  copyText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  noteBox: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 16,
+  },
+  noteText: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#92400E", flex: 1, lineHeight: 18 },
+  paidBtn: { marginBottom: 12, borderRadius: 16, overflow: "hidden" },
+  paidGrad: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16 },
+  paidBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
+  footNote: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 17 },
 });
 
-function ContributionCard({
-  item,
-  onPay,
-}: {
-  item: Contribution;
-  onPay: () => void;
-}) {
+/* ── Contribution Card ── */
+function ContributionCard({ item, onPay }: { item: Contribution; onPay: () => void }) {
   const colors = useColors();
-  const isPaid = item.status === "paid";
+  const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.unpaid;
 
   const daysLeft = Math.ceil(
     (new Date(item.deadline).getTime() - new Date("2026-06-20").getTime()) / 86400000
   );
-  const isOverdue = daysLeft < 0 && !isPaid;
-  const isUrgent = daysLeft <= 7 && daysLeft >= 0 && !isPaid;
+  const isOverdue = daysLeft < 0 && item.status === "unpaid";
+  const isUrgent = daysLeft <= 7 && daysLeft >= 0 && item.status === "unpaid";
+
+  const leftColor =
+    item.status === "confirmed" ? colors.success
+    : item.status === "pending"  ? "#7C3AED"
+    : item.status === "rejected" ? "#EF4444"
+    : isOverdue                  ? "#EF4444"
+    : isUrgent                   ? "#F59E0B"
+    : colors.border;
 
   return (
-    <View
-      style={[
-        cardStyles.card,
-        {
-          backgroundColor: colors.card,
-          borderColor: isPaid ? colors.success + "40" : isOverdue ? "#EF444440" : isUrgent ? "#F59E0B40" : colors.border,
-          borderLeftWidth: 4,
-          borderLeftColor: isPaid ? colors.success : isOverdue ? "#EF4444" : isUrgent ? "#F59E0B" : colors.border,
-        },
-      ]}
-    >
-      <View style={cardStyles.top}>
-        <View style={[cardStyles.iconWrap, { backgroundColor: isPaid ? colors.success + "18" : "#F59E0B18" }]}>
-          <Ionicons
-            name={isPaid ? "checkmark-circle" : "card-outline"}
-            size={22}
-            color={isPaid ? colors.success : "#F59E0B"}
-          />
+    <View style={[cardS.card, { backgroundColor: colors.card, borderColor: colors.border, borderLeftColor: leftColor }]}>
+      <View style={cardS.top}>
+        <View style={[cardS.iconWrap, { backgroundColor: cfg.bg }]}>
+          <Ionicons name={cfg.icon} size={21} color={cfg.color} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[cardStyles.title, { color: colors.foreground }]}>{item.title}</Text>
+          <Text style={[cardS.title, { color: colors.foreground }]}>{item.title}</Text>
           {item.description ? (
-            <Text style={[cardStyles.desc, { color: colors.mutedForeground }]} numberOfLines={2}>
-              {item.description}
-            </Text>
+            <Text style={[cardS.desc, { color: colors.mutedForeground }]} numberOfLines={2}>{item.description}</Text>
           ) : null}
         </View>
-        <Text style={[cardStyles.amount, { color: isPaid ? colors.success : colors.foreground }]}>
+        <Text style={[cardS.amount, { color: item.status === "confirmed" ? colors.success : colors.foreground }]}>
           ₦{item.amount.toLocaleString()}
         </Text>
       </View>
 
-      <View style={cardStyles.bottom}>
-        <View style={cardStyles.metaRow}>
+      <View style={cardS.bottom}>
+        <View style={cardS.metaRow}>
           <Ionicons name="calendar-outline" size={12} color={colors.mutedForeground} />
-          <Text style={[cardStyles.meta, { color: isOverdue && !isPaid ? "#EF4444" : colors.mutedForeground }]}>
-            {isPaid ? `Paid ${item.paidDate}` : isOverdue ? `Overdue — was due ${item.deadline}` : `Due ${item.deadline}`}
+          <Text style={[cardS.meta, { color: isOverdue ? "#EF4444" : colors.mutedForeground }]}>
+            {item.status === "confirmed"
+              ? `Confirmed ${item.paidDate ?? ""}`
+              : isOverdue
+              ? `Overdue — was due ${item.deadline}`
+              : `Due ${item.deadline}`}
           </Text>
         </View>
 
-        {!isPaid && isUrgent && (
-          <View style={[cardStyles.urgentBadge, { backgroundColor: "#FEF3C7" }]}>
-            <Text style={cardStyles.urgentText}>Due in {daysLeft}d</Text>
-          </View>
-        )}
+        <View style={cardS.right}>
+          {item.status === "unpaid" && isUrgent && (
+            <View style={cardS.urgentBadge}>
+              <Text style={cardS.urgentText}>Due in {daysLeft}d</Text>
+            </View>
+          )}
 
-        {isPaid ? (
-          <View style={[cardStyles.paidBadge, { backgroundColor: colors.success + "18" }]}>
-            <Ionicons name="checkmark" size={12} color={colors.success} />
-            <Text style={[cardStyles.paidText, { color: colors.success }]}>Paid</Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[cardStyles.payBtn, { backgroundColor: isOverdue ? "#EF4444" : colors.primary }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onPay();
-            }}
-            activeOpacity={0.85}
-          >
-            <Text style={cardStyles.payBtnText}>Pay Now</Text>
-          </TouchableOpacity>
-        )}
+          {item.status === "confirmed" && (
+            <View style={[cardS.badge, { backgroundColor: "#D1FAE5" }]}>
+              <Ionicons name="checkmark" size={12} color="#10B981" />
+              <Text style={[cardS.badgeText, { color: "#10B981" }]}>Confirmed</Text>
+            </View>
+          )}
+
+          {item.status === "pending" && (
+            <View style={[cardS.badge, { backgroundColor: "#F3EEFF" }]}>
+              <Ionicons name="time-outline" size={12} color="#7C3AED" />
+              <Text style={[cardS.badgeText, { color: "#7C3AED" }]}>Awaiting Admin</Text>
+            </View>
+          )}
+
+          {item.status === "rejected" && (
+            <TouchableOpacity
+              style={[cardS.payBtn, { backgroundColor: "#EF4444" }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPay(); }}
+              activeOpacity={0.85}
+            >
+              <Text style={cardS.payBtnText}>Pay Again</Text>
+            </TouchableOpacity>
+          )}
+
+          {item.status === "unpaid" && (
+            <TouchableOpacity
+              style={[cardS.payBtn, { backgroundColor: isOverdue ? "#EF4444" : "#7C3AED" }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPay(); }}
+              activeOpacity={0.85}
+            >
+              <Text style={cardS.payBtnText}>Pay Now</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+
+      {item.status === "rejected" && item.rejectionReason && (
+        <View style={cardS.rejectedNote}>
+          <Ionicons name="alert-circle-outline" size={13} color="#EF4444" />
+          <Text style={cardS.rejectedText}>Rejected: {item.rejectionReason}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
-const cardStyles = StyleSheet.create({
-  card: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 12, gap: 12 },
+const cardS = StyleSheet.create({
+  card: { borderRadius: 16, borderWidth: 1, borderLeftWidth: 4, padding: 16, marginBottom: 12, gap: 12 },
   top: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   iconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   title: { fontSize: 15, fontFamily: "Inter_600SemiBold", flex: 1 },
@@ -363,42 +294,51 @@ const cardStyles = StyleSheet.create({
   bottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 4, flex: 1 },
   meta: { fontSize: 12, fontFamily: "Inter_400Regular" },
-  urgentBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  right: { flexDirection: "row", alignItems: "center", gap: 8 },
+  urgentBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, backgroundColor: "#FEF3C7" },
   urgentText: { fontSize: 11, fontFamily: "Inter_700Bold", color: "#B45309" },
-  paidBadge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  paidText: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  badge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  badgeText: { fontSize: 12, fontFamily: "Inter_700Bold" },
   payBtn: { borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 },
   payBtnText: { color: "#fff", fontSize: 13, fontFamily: "Inter_700Bold" },
+  rejectedNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 6,
+    backgroundColor: "#FEE2E2", borderRadius: 10, padding: 10,
+  },
+  rejectedText: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#991B1B", flex: 1, lineHeight: 17 },
 });
 
+/* ── Main Screen ── */
 export default function PaymentsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { contributions, payContribution } = useData();
+  const { contributions, submitPayment } = useData();
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
   const [payingItem, setPayingItem] = useState<Contribution | null>(null);
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   const myContributions = contributions.filter((c) => c.level === user?.level || !user?.level);
-  const filtered =
-    activeFilter === "all"
-      ? myContributions
-      : myContributions.filter((c) => c.status === activeFilter);
+
+  const filtered = activeFilter === "all"
+    ? myContributions
+    : myContributions.filter((c) => c.status === activeFilter);
 
   const totalOwed = myContributions
-    .filter((c) => c.status === "unpaid")
+    .filter((c) => c.status === "unpaid" || c.status === "rejected")
     .reduce((s, c) => s + c.amount, 0);
-  const totalPaid = myContributions
-    .filter((c) => c.status === "paid")
+  const totalConfirmed = myContributions
+    .filter((c) => c.status === "confirmed")
     .reduce((s, c) => s + c.amount, 0);
+  const pendingCount = myContributions.filter((c) => c.status === "pending").length;
   const unpaidCount = myContributions.filter((c) => c.status === "unpaid").length;
 
   const FILTERS: { key: FilterTab; label: string }[] = [
     { key: "all", label: "All" },
     { key: "unpaid", label: "Unpaid" },
-    { key: "paid", label: "Paid" },
+    { key: "pending", label: "Pending" },
+    { key: "confirmed", label: "Confirmed" },
   ];
 
   return (
@@ -412,23 +352,23 @@ export default function PaymentsScreen() {
 
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Owed</Text>
+            <Text style={styles.summaryLabel}>Outstanding</Text>
             <Text style={[styles.summaryValue, { color: totalOwed > 0 ? "#FBBF24" : "#34D399" }]}>
-              {totalOwed > 0 ? `₦${totalOwed.toLocaleString()}` : "All Paid"}
+              {totalOwed > 0 ? `₦${totalOwed.toLocaleString()}` : "All Clear"}
             </Text>
             {unpaidCount > 0 && (
-              <Text style={styles.summaryCount}>{unpaidCount} outstanding</Text>
+              <Text style={styles.summaryCount}>{unpaidCount} unpaid</Text>
             )}
           </View>
-          <View style={[styles.divider]} />
+          <View style={styles.divider} />
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Paid</Text>
+            <Text style={styles.summaryLabel}>Confirmed</Text>
             <Text style={[styles.summaryValue, { color: "#34D399" }]}>
-              ₦{totalPaid.toLocaleString()}
+              ₦{totalConfirmed.toLocaleString()}
             </Text>
-            <Text style={styles.summaryCount}>
-              {myContributions.filter((c) => c.status === "paid").length} payments
-            </Text>
+            {pendingCount > 0 && (
+              <Text style={styles.summaryCount}>{pendingCount} awaiting admin</Text>
+            )}
           </View>
         </View>
       </LinearGradient>
@@ -437,22 +377,11 @@ export default function PaymentsScreen() {
         {FILTERS.map((f) => (
           <TouchableOpacity
             key={f.key}
-            style={[
-              styles.filterTab,
-              activeFilter === f.key && [styles.filterTabActive, { borderBottomColor: colors.primary }],
-            ]}
-            onPress={() => {
-              setActiveFilter(f.key);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }}
+            style={[styles.filterTab, activeFilter === f.key && [styles.filterTabActive, { borderBottomColor: colors.primary }]]}
+            onPress={() => { setActiveFilter(f.key); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
             activeOpacity={0.7}
           >
-            <Text
-              style={[
-                styles.filterText,
-                { color: activeFilter === f.key ? colors.primary : colors.mutedForeground },
-              ]}
-            >
+            <Text style={[styles.filterText, { color: activeFilter === f.key ? colors.primary : colors.mutedForeground }]}>
               {f.label}
             </Text>
           </TouchableOpacity>
@@ -461,10 +390,7 @@ export default function PaymentsScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: insets.bottom + (Platform.OS === "web" ? 84 : 100) },
-        ]}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + (Platform.OS === "web" ? 84 : 100) }]}
         showsVerticalScrollIndicator={false}
       >
         {filtered.length === 0 ? (
@@ -483,21 +409,17 @@ export default function PaymentsScreen() {
           </View>
         ) : (
           filtered.map((item) => (
-            <ContributionCard
-              key={item.id}
-              item={item}
-              onPay={() => setPayingItem(item)}
-            />
+            <ContributionCard key={item.id} item={item} onPay={() => setPayingItem(item)} />
           ))
         )}
       </ScrollView>
 
       {payingItem && (
-        <PaymentModal
+        <BankTransferModal
           contribution={payingItem}
           onClose={() => setPayingItem(null)}
-          onSuccess={() => {
-            payContribution(payingItem.id);
+          onPaid={() => {
+            submitPayment(payingItem.id);
             setPayingItem(null);
           }}
         />
@@ -519,7 +441,7 @@ const styles = StyleSheet.create({
   filterRow: { flexDirection: "row", borderBottomWidth: 1 },
   filterTab: { flex: 1, paddingVertical: 14, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   filterTabActive: { borderBottomWidth: 2 },
-  filterText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  filterText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
   content: { padding: 16 },
   emptyContainer: { alignItems: "center", paddingTop: 60, paddingHorizontal: 32, gap: 16 },
   emptyIconWrap: { width: 96, height: 96, borderRadius: 48, alignItems: "center", justifyContent: "center" },

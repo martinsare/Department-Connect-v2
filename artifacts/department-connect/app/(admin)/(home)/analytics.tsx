@@ -49,8 +49,8 @@ export default function AnalyticsScreen() {
     { level: "500L", count: students.filter((s) => s.level === "500L").length },
   ];
 
-  const totalCollected = contributions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
-  const totalOutstanding = contributions.filter((c) => c.status === "unpaid").reduce((s, c) => s + c.amount, 0);
+  const totalCollected = contributions.filter((c) => c.status === "confirmed").reduce((s, c) => s + c.amount, 0);
+  const totalOutstanding = contributions.filter((c) => c.status === "unpaid" || c.status === "rejected").reduce((s, c) => s + c.amount, 0);
   const collectionPct = totalCollected + totalOutstanding > 0
     ? Math.round(totalCollected / (totalCollected + totalOutstanding) * 100)
     : 0;

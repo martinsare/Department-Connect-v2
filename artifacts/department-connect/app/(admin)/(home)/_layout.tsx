@@ -28,9 +28,9 @@ function NativeTabLayout() {
         <Icon sf={{ default: "checkmark.seal", selected: "checkmark.seal.fill" }} />
         <Label>Approvals</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="events">
-        <Icon sf={{ default: "calendar.badge.plus", selected: "calendar.badge.plus" }} />
-        <Label>Events</Label>
+      <NativeTabs.Trigger name="payments">
+        <Icon sf={{ default: "banknote", selected: "banknote.fill" }} />
+        <Label>Payments</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
@@ -115,17 +115,18 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="events"
+        name="payments"
         options={{
-          title: "Events",
+          title: "Payments",
           tabBarIcon: ({ color, focused }) =>
             isIOS ? (
-              <SymbolView name="calendar.badge.plus" tintColor={color} size={22} />
+              <SymbolView name={focused ? "banknote.fill" : "banknote"} tintColor={color} size={22} />
             ) : (
-              <Ionicons name={focused ? "calendar" : "calendar-outline"} size={22} color={color} />
+              <Ionicons name={focused ? "card" : "card-outline"} size={22} color={color} />
             ),
         }}
       />
+      <Tabs.Screen name="events" options={{ href: null }} />
       <Tabs.Screen name="analytics" options={{ href: null }} />
     </Tabs>
   );

@@ -8,7 +8,7 @@ export type NotificationCategory =
   | "big_events"
   | "small_events"
   | "extras";
-export type ContributionStatus = "paid" | "unpaid";
+export type ContributionStatus = "unpaid" | "pending" | "confirmed" | "rejected";
 export type EventCategory = "lecture" | "big_event" | "small_event" | "extra";
 
 export interface StudentRecord {
@@ -78,6 +78,10 @@ export interface Contribution {
   paidDate?: string;
   level: string;
   description?: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  rejectionReason?: string;
 }
 
 export interface AppEvent {
@@ -460,7 +464,7 @@ const NOTIFICATIONS: AppNotification[] = [
     id: "n5",
     category: "extras",
     title: "Payment Confirmed",
-    body: "Your Class Dues payment of ₦5,000 for 1st Semester was received successfully. Receipt saved.",
+    body: "Your Class Dues payment of ₦5,000 for 1st Semester has been confirmed by Admin. Thank you!",
     time: "1 week ago",
     isRead: true,
     priority: "normal",
@@ -490,11 +494,14 @@ const CONTRIBUTIONS: Contribution[] = [
     id: "c1",
     title: "Class Dues — 1st Semester",
     amount: 5000,
-    status: "paid",
+    status: "confirmed",
     deadline: "2026-01-31",
     paidDate: "2026-01-20",
     level: "300L",
     description: "Mandatory semester dues covering departmental expenses and student welfare.",
+    bankName: "First Bank",
+    accountNumber: "3012345678",
+    accountName: "CS Dept Student Fund",
   },
   {
     id: "c2",
@@ -504,16 +511,21 @@ const CONTRIBUTIONS: Contribution[] = [
     deadline: "2026-07-01",
     level: "300L",
     description: "Contribution towards the annual departmental week celebration, events, and logistics.",
+    bankName: "GTBank",
+    accountNumber: "0123456789",
+    accountName: "CS Dept Events Fund",
   },
   {
     id: "c3",
     title: "Course Materials Fund",
     amount: 2500,
-    status: "paid",
+    status: "pending",
     deadline: "2026-02-28",
-    paidDate: "2026-02-15",
     level: "300L",
     description: "Funds for printing course materials, lab supplies, and shared academic resources.",
+    bankName: "Access Bank",
+    accountNumber: "0987654321",
+    accountName: "CS Dept Materials Fund",
   },
   {
     id: "c4",
@@ -523,6 +535,9 @@ const CONTRIBUTIONS: Contribution[] = [
     deadline: "2026-06-28",
     level: "300L",
     description: "Required fee for examination clearance. Must be paid before exam period begins.",
+    bankName: "Zenith Bank",
+    accountNumber: "2109876543",
+    accountName: "CS Dept Admin Fund",
   },
 ];
 
@@ -598,7 +613,7 @@ const AUDIT_LOGS: AuditLog[] = [
   { id: "l3", action: "Account Approved", user: "Ibrahim Yusuf", role: "Lecturer", timestamp: "11:30 AM · Today", details: "Approved: Nwosu Peter (ART2500004)" },
   { id: "l4", action: "Login", user: "Ibrahim Yusuf", role: "Admin", timestamp: "9:00 AM · Today", details: "Logged in from Android device" },
   { id: "l5", action: "Class Session Created", user: "Ibrahim Yusuf", role: "Admin", timestamp: "8:55 AM · Today", details: "CSC301 Data Structures — 8:00 AM, LT1" },
-  { id: "l6", action: "Payment Received", user: "System", role: "System", timestamp: "1 week ago", details: "₦5,000 from Adeyemi Tolu — Class Dues" },
+  { id: "l6", action: "Payment Confirmed", user: "Ibrahim Yusuf", role: "Admin", timestamp: "1 week ago", details: "₦5,000 from Adeyemi Tolu — Class Dues" },
   { id: "l7", action: "Account Created", user: "Okafor Sandra", role: "Course Rep", timestamp: "2 days ago", details: "New student: Emmanuel Obi (ART2500006)" },
   { id: "l8", action: "Event Created", user: "Adeleke James", role: "Dept. Executive", timestamp: "3 days ago", details: "Departmental Week — June 27, 2026" },
 ];
@@ -620,7 +635,10 @@ interface DataContextValue {
   classAttendees: Record<string, ClassAttendee[]>;
   markAttendance: (classId: string, attendee: ClassAttendee) => void;
   attendedClasses: string[];
-  payContribution: (id: string) => void;
+  submitPayment: (id: string) => void;
+  confirmPayment: (id: string) => void;
+  rejectPayment: (id: string, reason: string) => void;
+  createContribution: (contribution: Omit<Contribution, "id" | "status" | "paidDate">) => void;
   addStudent: (student: Omit<StudentRecord, "id">) => void;
   updateStudentLevel: (id: string, level: string) => void;
   updateStudentPicture: (matricNumber: string, uri: string) => void;
@@ -644,9 +662,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [classAttendees, setClassAttendees] = useState<Record<string, ClassAttendee[]>>(SEED_CLASS_ATTENDEES);
 
   const markNotificationRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
   };
 
   const deleteNotification = (id: string) => {
@@ -680,26 +696,84 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const payContribution = (id: string) => {
+  /* Student marks transfer done — status goes Pending */
+  const submitPayment = (id: string) => {
+    setContributions((prev) =>
+      prev.map((c) => c.id === id ? { ...c, status: "pending" as ContributionStatus } : c)
+    );
+    const item = contributions.find((c) => c.id === id);
+    if (item) {
+      setNotifications((prev) => [
+        {
+          id: `notif_pay_pending_${id}_${Date.now()}`,
+          category: "extras",
+          title: "Payment Pending Confirmation",
+          body: `Your transfer for "${item.title}" (₦${item.amount.toLocaleString()}) is awaiting Admin confirmation. You'll be notified once reviewed.`,
+          time: "Just now",
+          isRead: false,
+          priority: "normal",
+        },
+        ...prev,
+      ]);
+    }
+  };
+
+  /* Admin confirms payment */
+  const confirmPayment = (id: string) => {
     const today = new Date().toISOString().split("T")[0];
     setContributions((prev) =>
       prev.map((c) =>
-        c.id === id ? { ...c, status: "paid" as ContributionStatus, paidDate: today } : c
+        c.id === id ? { ...c, status: "confirmed" as ContributionStatus, paidDate: today, rejectionReason: undefined } : c
       )
     );
-    const paid = contributions.find((c) => c.id === id);
-    if (paid) {
-      const newNotif: AppNotification = {
-        id: `notif_pay_${id}_${Date.now()}`,
-        category: "extras",
-        title: "Payment Successful",
-        body: `Your payment of ₦${paid.amount.toLocaleString()} for "${paid.title}" was received successfully. Receipt saved.`,
-        time: "Just now",
-        isRead: false,
-        priority: "normal",
-      };
-      setNotifications((prev) => [newNotif, ...prev]);
+    const item = contributions.find((c) => c.id === id);
+    if (item) {
+      setNotifications((prev) => [
+        {
+          id: `notif_pay_confirmed_${id}_${Date.now()}`,
+          category: "extras",
+          title: "Payment Confirmed ✓",
+          body: `Your payment of ₦${item.amount.toLocaleString()} for "${item.title}" has been confirmed by Admin. Thank you!`,
+          time: "Just now",
+          isRead: false,
+          priority: "normal",
+        },
+        ...prev,
+      ]);
     }
+  };
+
+  /* Admin rejects payment */
+  const rejectPayment = (id: string, reason: string) => {
+    setContributions((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, status: "rejected" as ContributionStatus, rejectionReason: reason } : c
+      )
+    );
+    const item = contributions.find((c) => c.id === id);
+    if (item) {
+      setNotifications((prev) => [
+        {
+          id: `notif_pay_rejected_${id}_${Date.now()}`,
+          category: "extras",
+          title: "Payment Rejected",
+          body: `Your payment for "${item.title}" was rejected: ${reason}. Please transfer the correct amount and try again.`,
+          time: "Just now",
+          isRead: false,
+          priority: "high",
+        },
+        ...prev,
+      ]);
+    }
+  };
+
+  /* Admin creates a new contribution */
+  const createContribution = (contribution: Omit<Contribution, "id" | "status" | "paidDate">) => {
+    const id = `c${Date.now()}`;
+    setContributions((prev) => [
+      ...prev,
+      { ...contribution, id, status: "unpaid" as ContributionStatus },
+    ]);
   };
 
   const addStudent = (student: Omit<StudentRecord, "id">) => {
@@ -781,7 +855,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         classAttendees,
         markAttendance,
         attendedClasses,
-        payContribution,
+        submitPayment,
+        confirmPayment,
+        rejectPayment,
+        createContribution,
         addStudent,
         updateStudentLevel,
         updateStudentPicture,
@@ -797,7 +874,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useData(): DataContextValue {
+export function useData() {
   const ctx = useContext(DataContext);
   if (!ctx) throw new Error("useData must be used within DataProvider");
   return ctx;

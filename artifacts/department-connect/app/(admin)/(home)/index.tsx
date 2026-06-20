@@ -102,8 +102,8 @@ export default function AdminDashboard() {
     : 0;
 
   const totalContributions = contributions.reduce((s, c) => s + c.amount, 0);
-  const paidContributions = contributions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
-  const outstandingPayments = contributions.filter((c) => c.status === "unpaid").length;
+  const paidContributions = contributions.filter((c) => c.status === "confirmed").reduce((s, c) => s + c.amount, 0);
+  const outstandingPayments = contributions.filter((c) => c.status === "unpaid" || c.status === "rejected").length;
 
   const upcomingEvents = events.filter((e) => e.date >= "2026-06-20").slice(0, 2);
 
