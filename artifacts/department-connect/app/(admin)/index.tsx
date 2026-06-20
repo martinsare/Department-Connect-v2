@@ -66,9 +66,10 @@ export default function AdminDashboard() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, logout, allUsers } = useAuth();
-  const { students, classes, announcements, contributions, events, addAnnouncement } = useData();
+  const { students, classes, announcements, contributions, events, addAnnouncement, attendanceS1, attendanceS2 } = useData();
   const [showAnnounce, setShowAnnounce] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [modalAttSem, setModalAttSem] = useState<1 | 2>(1);
   const [annTitle, setAnnTitle] = useState("");
   const [annBody, setAnnBody] = useState("");
   const [annTarget, setAnnTarget] = useState("All Students");
@@ -84,6 +85,11 @@ export default function AdminDashboard() {
   const totalAttended = classes.reduce((s, c) => s + c.attendanceCount, 0);
   const totalCapacity = classes.length * 25;
   const attRate = Math.round((totalAttended / totalCapacity) * 100);
+
+  const modalAttRecords = modalAttSem === 1 ? attendanceS1 : attendanceS2;
+  const modalAvgAtt = modalAttRecords.length > 0
+    ? Math.round(modalAttRecords.reduce((s, r) => s + r.percentage, 0) / modalAttRecords.length)
+    : 0;
 
   const totalContributions = contributions.reduce((s, c) => s + c.amount, 0);
   const paidContributions = contributions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
@@ -255,32 +261,49 @@ export default function AdminDashboard() {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
               {/* Attendance */}
-              <Text style={[anlStyles.section, { color: colors.foreground }]}>Attendance Overview</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 0 }}>
+                <Text style={[anlStyles.section, { color: colors.foreground, marginBottom: 0 }]}>Attendance Overview</Text>
+                <View style={{ flexDirection: "row", backgroundColor: colors.muted, borderRadius: 8, padding: 2, gap: 2 }}>
+                  {([1, 2] as const).map((s) => (
+                    <TouchableOpacity
+                      key={s}
+                      style={{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6, backgroundColor: modalAttSem === s ? colors.primary : "transparent" }}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setModalAttSem(s); }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={{ fontSize: 11, fontFamily: "Inter_700Bold", color: modalAttSem === s ? "#fff" : colors.mutedForeground }}>S{s}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              <Text style={[{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginBottom: 10, marginTop: 2 }]}>
+                {modalAttSem === 1 ? "1st" : "2nd"} Semester · {modalAttRecords.length} courses · avg {modalAvgAtt}%
+              </Text>
               <View style={anlStyles.metricRow}>
                 <View style={[anlStyles.metricBox, { backgroundColor: "#7C3AED15", flex: 1 }]}>
                   <Ionicons name="people-outline" size={20} color="#7C3AED" />
-                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{attRate}%</Text>
-                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Overall rate</Text>
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{modalAvgAtt}%</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Avg rate</Text>
                 </View>
                 <View style={[anlStyles.metricBox, { backgroundColor: "#10B98115", flex: 1 }]}>
                   <Ionicons name="checkmark-done-outline" size={20} color="#10B981" />
-                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{totalAttended}</Text>
-                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Total check-ins</Text>
+                  <Text style={[anlStyles.metricVal, { color: colors.foreground }]}>{modalAttRecords.length}</Text>
+                  <Text style={[anlStyles.metricLabel, { color: colors.mutedForeground }]}>Courses</Text>
                 </View>
               </View>
 
-              {/* Per-course attendance bar chart */}
-              {classes.slice(0, 5).map((cls) => {
-                const pct = Math.min(100, Math.round((cls.attendanceCount / 25) * 100));
+              {/* Per-course attendance bar chart — uses real attendance records, not raw sessions */}
+              {modalAttRecords.map((r) => {
+                const pct = r.percentage;
                 return (
-                  <View key={cls.id} style={anlStyles.barRow}>
+                  <View key={r.courseCode} style={anlStyles.barRow}>
                     <View style={{ flex: 1 }}>
                       <View style={anlStyles.barLabelRow}>
-                        <Text style={[anlStyles.barLabel, { color: colors.foreground }]}>{cls.courseCode}</Text>
+                        <Text style={[anlStyles.barLabel, { color: colors.foreground }]}>{r.courseCode}</Text>
                         <Text style={[anlStyles.barPct, { color: colors.primary }]}>{pct}%</Text>
                       </View>
                       <View style={[anlStyles.barTrack, { backgroundColor: colors.muted }]}>
-                        <View style={[anlStyles.barFill, { width: `${pct}%` as any, backgroundColor: pct >= 75 ? "#10B981" : pct >= 50 ? "#F59E0B" : "#EF4444" }]} />
+                        <View style={[anlStyles.barFill, { width: `${pct}%` as any, backgroundColor: pct >= 80 ? "#10B981" : pct >= 70 ? "#F59E0B" : "#EF4444" }]} />
                       </View>
                     </View>
                   </View>
