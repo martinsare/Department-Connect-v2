@@ -43,7 +43,7 @@ type FormErrors = {
 export default function StudentsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { students, addStudent } = useData();
+  const { students, addStudent, updateStudentLevel } = useData();
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
@@ -297,8 +297,48 @@ export default function StudentsScreen() {
                     </View>
                   ))}
 
+                  {/* Change Level */}
+                  <View style={{ marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
+                    <Text style={{ fontSize: 12, fontFamily: "Inter_700Bold", color: colors.mutedForeground, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+                      Change Level
+                    </Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                      {LEVEL_OPTIONS.map((l) => {
+                        const isCurrentLevel = detailStudent.level === l;
+                        return (
+                          <TouchableOpacity
+                            key={l}
+                            style={[
+                              addStyles.levelChip,
+                              {
+                                backgroundColor: isCurrentLevel ? colors.primary : colors.muted,
+                                borderColor: isCurrentLevel ? colors.primary : colors.border,
+                              },
+                            ]}
+                            onPress={() => {
+                              if (!isCurrentLevel) {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                updateStudentLevel(detailStudent.id, l);
+                                setDetailStudent({ ...detailStudent, level: l });
+                              }
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            {isCurrentLevel && (
+                              <Ionicons name="checkmark" size={12} color="#fff" />
+                            )}
+                            <Text style={[addStyles.levelChipText, { color: isCurrentLevel ? "#fff" : colors.mutedForeground }]}>{l}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    <Text style={{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginTop: 8 }}>
+                      Tap a level to promote or move this student. Change takes effect immediately.
+                    </Text>
+                  </View>
+
                   <TouchableOpacity
-                    style={{ marginTop: 24, borderRadius: 14, paddingVertical: 14, backgroundColor: colors.muted, alignItems: "center" }}
+                    style={{ marginTop: 20, borderRadius: 14, paddingVertical: 14, backgroundColor: colors.muted, alignItems: "center" }}
                     onPress={() => setDetailStudent(null)}
                     activeOpacity={0.8}
                   >

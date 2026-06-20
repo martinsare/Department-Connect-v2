@@ -1,8 +1,9 @@
-import React from "react";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -26,7 +27,8 @@ const barS = StyleSheet.create({
 export default function AnalyticsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { students, classes, contributions, attendanceS1 } = useData();
+  const { students, classes, contributions, attendanceS1, attendanceS2 } = useData();
+  const [attSemester, setAttSemester] = useState<1 | 2>(1);
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
@@ -37,12 +39,24 @@ export default function AnalyticsScreen() {
     { level: "200L", count: students.filter((s) => s.level === "200L").length },
     { level: "300L", count: students.filter((s) => s.level === "300L").length },
     { level: "400L", count: students.filter((s) => s.level === "400L").length },
+    { level: "500L", count: students.filter((s) => s.level === "500L").length },
   ];
 
   const totalCollected = contributions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
   const totalOutstanding = contributions.filter((c) => c.status === "unpaid").reduce((s, c) => s + c.amount, 0);
+  const collectionPct = totalCollected + totalOutstanding > 0
+    ? Math.round(totalCollected / (totalCollected + totalOutstanding) * 100)
+    : 0;
 
-  const avgAtt = Math.round(attendanceS1.reduce((s, r) => s + r.percentage, 0) / attendanceS1.length);
+  const attRecords = attSemester === 1 ? attendanceS1 : attendanceS2;
+  const avgAtt = attRecords.length > 0
+    ? Math.round(attRecords.reduce((s, r) => s + r.percentage, 0) / attRecords.length)
+    : 0;
+
+  const switchAttSemester = (s: 1 | 2) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setAttSemester(s);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -62,7 +76,7 @@ export default function AnalyticsScreen() {
           {[
             { label: "Active", value: activeStudents, color: colors.success, icon: "person-circle" as const },
             { label: "Pending", value: pendingStudents, color: colors.warning, icon: "time-outline" as const },
-            { label: "Avg Attendance", value: `${avgAtt}%`, color: colors.primary, icon: "checkmark-circle" as const },
+            { label: "Avg Att.", value: `${avgAtt}%`, color: colors.primary, icon: "checkmark-circle" as const },
             { label: "Collected", value: `₦${(totalCollected / 1000).toFixed(0)}k`, color: colors.info, icon: "card-outline" as const },
           ].map((s) => (
             <View key={s.label} style={[styles.quickStat, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -75,6 +89,7 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
+        {/* Students by Level */}
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Students by Level</Text>
           <View style={styles.levelList}>
@@ -90,22 +105,47 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
+        {/* Attendance by Course — with semester toggle */}
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.foreground }]}>Attendance by Course</Text>
-          {attendanceS1.map((r) => (
-            <View key={r.courseCode} style={styles.levelRow}>
-              <Text style={[styles.courseCode, { color: colors.primary }]}>{r.courseCode}</Text>
-              <View style={{ flex: 1 }}>
-                <ProgressBar
-                  value={r.percentage}
-                  max={100}
-                  color={r.percentage >= 80 ? colors.success : r.percentage >= 70 ? colors.warning : colors.destructive}
-                />
-              </View>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>Attendance by Course</Text>
+            <View style={[styles.semToggle, { backgroundColor: colors.muted }]}>
+              <TouchableOpacity
+                style={[styles.semBtn, attSemester === 1 && { backgroundColor: colors.primary }]}
+                onPress={() => switchAttSemester(1)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.semBtnText, attSemester === 1 && { color: "#fff" }]}>S1</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.semBtn, attSemester === 2 && { backgroundColor: colors.primary }]}
+                onPress={() => switchAttSemester(2)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.semBtnText, attSemester === 2 && { color: "#fff" }]}>S2</Text>
+              </TouchableOpacity>
             </View>
-          ))}
+          </View>
+          <Text style={[styles.semLabel, { color: colors.mutedForeground }]}>
+            {attSemester === 1 ? "1st" : "2nd"} Semester · {attRecords.length} courses · avg {avgAtt}%
+          </Text>
+          <View style={{ gap: 12, marginTop: 12 }}>
+            {attRecords.map((r) => (
+              <View key={r.courseCode} style={styles.levelRow}>
+                <Text style={[styles.courseCode, { color: colors.primary }]}>{r.courseCode}</Text>
+                <View style={{ flex: 1 }}>
+                  <ProgressBar
+                    value={r.percentage}
+                    max={100}
+                    color={r.percentage >= 80 ? colors.success : r.percentage >= 70 ? colors.warning : colors.destructive}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
 
+        {/* Contributions */}
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Contributions</Text>
           <View style={styles.finRow}>
@@ -121,10 +161,10 @@ export default function AnalyticsScreen() {
             </View>
           </View>
           <View style={styles.finBarTrack}>
-            <View style={[styles.finBarFill, { backgroundColor: colors.success, width: `${Math.round(totalCollected / (totalCollected + totalOutstanding) * 100)}%` }]} />
+            <View style={[styles.finBarFill, { backgroundColor: colors.success, width: `${collectionPct}%` }]} />
           </View>
           <Text style={[styles.finNote, { color: colors.mutedForeground }]}>
-            {Math.round(totalCollected / (totalCollected + totalOutstanding) * 100)}% of total dues collected
+            {collectionPct}% of total dues collected
           </Text>
         </View>
       </ScrollView>
@@ -143,13 +183,18 @@ const styles = StyleSheet.create({
   quickStatValue: { fontSize: 16, fontFamily: "Inter_700Bold" },
   quickStatLabel: { fontSize: 10, fontFamily: "Inter_400Regular", textAlign: "center" },
   card: { borderRadius: 18, borderWidth: 1, padding: 18 },
-  cardTitle: { fontSize: 15, fontFamily: "Inter_700Bold", marginBottom: 14 },
+  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
+  cardTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  semToggle: { flexDirection: "row", borderRadius: 8, padding: 2, gap: 2 },
+  semBtn: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 },
+  semBtnText: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#94A3B8" },
+  semLabel: { fontSize: 11, fontFamily: "Inter_400Regular", marginBottom: 0 },
   levelList: { gap: 12 },
-  levelRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  levelLabel: { fontSize: 13, fontFamily: "Inter_700Bold", minWidth: 36 },
+  levelRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
+  levelLabel: { fontSize: 13, fontFamily: "Inter_700Bold", minWidth: 40 },
   levelCount: { fontSize: 12, fontFamily: "Inter_600SemiBold", minWidth: 20, textAlign: "right" },
   courseCode: { fontSize: 11, fontFamily: "Inter_700Bold", minWidth: 56, letterSpacing: 0.5 },
-  finRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
+  finRow: { flexDirection: "row", gap: 10, marginBottom: 14, marginTop: 4 },
   finCard: { flex: 1, borderRadius: 14, padding: 14, alignItems: "center", gap: 6 },
   finValue: { fontSize: 18, fontFamily: "Inter_700Bold" },
   finLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
