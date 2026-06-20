@@ -43,7 +43,7 @@ export default function ForgotPasswordScreen() {
   if (sent) {
     return (
       <LinearGradient
-        colors={["#0D0720", "#2D1B69", "#7C3AED"]}
+        colors={["#0D0720", "#2D1B69", "#4C1D95"]}
         style={[styles.gradient, { alignItems: "center", justifyContent: "center", padding: 24 }]}
       >
         <View style={styles.sentCard}>
@@ -73,26 +73,27 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <LinearGradient colors={["#0D0720", "#2D1B69", "#7C3AED"]} style={styles.gradient}>
-      <KeyboardAwareScrollViewCompat
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={styles.root}>
+      <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={[styles.purpleZone, { paddingTop: topPad }]}>
         <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={18} color="rgba(255,255,255,0.8)" />
           <Text style={styles.backLinkText}>Back to Login</Text>
         </TouchableOpacity>
-
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
-            <Ionicons name="lock-open-outline" size={36} color="#fff" />
+            <Ionicons name="lock-open-outline" size={34} color="#fff" />
           </View>
           <Text style={styles.heroTitle}>Forgot Password?</Text>
           <Text style={styles.heroSub}>Enter your details and we'll send reset instructions</Text>
         </View>
+      </LinearGradient>
 
-        <View style={styles.card}>
+      <View style={styles.whitePanel}>
+        <KeyboardAwareScrollViewCompat
+          contentContainerStyle={[styles.panelScroll, { paddingBottom: botPad }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {!!error && (
             <View style={styles.errorBanner}>
               <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
@@ -128,21 +129,34 @@ export default function ForgotPasswordScreen() {
               </>
             )}
           </TouchableOpacity>
-        </View>
-      </KeyboardAwareScrollViewCompat>
-    </LinearGradient>
+        </KeyboardAwareScrollViewCompat>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: 24 },
+  root: { flex: 1, backgroundColor: "#fff" },
+  purpleZone: {
+    paddingHorizontal: 24,
+    paddingBottom: 36,
+  },
+  whitePanel: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: "hidden",
+  },
+  panelScroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 28 },
   backLink: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    marginBottom: 32, alignSelf: "flex-start",
+    marginBottom: 24, alignSelf: "flex-start",
   },
   backLinkText: { color: "rgba(255,255,255,0.8)", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  hero: { alignItems: "center", marginBottom: 32 },
+  hero: { alignItems: "center" },
   heroIcon: {
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: "rgba(255,255,255,0.15)",
@@ -153,10 +167,6 @@ const styles = StyleSheet.create({
   heroSub: {
     fontSize: 14, fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.65)", textAlign: "center",
-  },
-  card: {
-    backgroundColor: "#fff", borderRadius: 24, padding: 24,
-    boxShadow: "0px 12px 24px rgba(0,0,0,0.25)", elevation: 12,
   },
   errorBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,

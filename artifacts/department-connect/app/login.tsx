@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  Dimensions,
   Image,
   Platform,
   StyleSheet,
@@ -10,14 +11,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
+
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useAuth } from "@/context/AuthContext";
 import { PendingAnimation, RejectedAnimation } from "@/components/AnimatedStatus";
+
+const { height: SCREEN_H } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -97,13 +102,11 @@ export default function LoginScreen() {
     );
   }
 
+  const PURPLE_H = SCREEN_H * 0.42;
+
   return (
-    <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={styles.gradient}>
-      <KeyboardAwareScrollViewCompat
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={styles.root}>
+      <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={[styles.purpleZone, { height: PURPLE_H, paddingTop: topPad }]}>
         <Animated.View style={[styles.hero, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
           <View style={styles.logoOuter}>
             <View style={styles.logoCircle}>
@@ -113,13 +116,15 @@ export default function LoginScreen() {
           <Text style={styles.appName}>Department Connect</Text>
           <Text style={styles.tagline}>Your Academic Community</Text>
         </Animated.View>
+      </LinearGradient>
 
-        <Animated.View
-          style={[
-            styles.card,
-            { opacity: cardOpacity, transform: [{ translateY: cardTranslate }] },
-          ]}
+      <View style={styles.whitePanel}>
+        <KeyboardAwareScrollViewCompat
+          contentContainerStyle={[styles.panelScroll, { paddingBottom: botPad }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
+          <View>
           <Text style={styles.cardTitle}>Welcome Back</Text>
           <Text style={styles.cardSubtitle}>Sign in to access your dashboard</Text>
 
@@ -215,16 +220,30 @@ export default function LoginScreen() {
             </View>
             <Text style={styles.demoHint}>Tap any chip to auto-fill</Text>
           </View>
-        </Animated.View>
-      </KeyboardAwareScrollViewCompat>
-    </LinearGradient>
+          </View>
+        </KeyboardAwareScrollViewCompat>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: 24 },
-  hero: { alignItems: "center", marginBottom: 32 },
+  root: { flex: 1, backgroundColor: "#fff" },
+  purpleZone: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingBottom: 36,
+  },
+  whitePanel: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: "hidden",
+  },
+  panelScroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 24 },
+  hero: { alignItems: "center" },
   logoOuter: {
     width: 112,
     height: 112,
@@ -261,13 +280,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: "rgba(255,255,255,0.65)",
     marginTop: 4,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 24,
-    boxShadow: "0px 12px 24px rgba(0,0,0,0.25)",
-    elevation: 12,
   },
   cardTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#0F172A", marginBottom: 4 },
   cardSubtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B", marginBottom: 20 },

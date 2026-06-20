@@ -191,7 +191,7 @@ export default function RegisterScreen() {
     const isTeacher = done === "teacher";
     return (
       <LinearGradient
-        colors={["#0D0720", "#2D1B69", "#7C3AED"]}
+        colors={["#0D0720", "#2D1B69", "#4C1D95"]}
         style={[styles.gradient, { alignItems: "center", justifyContent: "center", padding: 24 }]}
       >
         <View style={styles.successCard}>
@@ -226,12 +226,8 @@ export default function RegisterScreen() {
   }
 
   return (
-    <LinearGradient colors={["#0D0720", "#2D1B69", "#7C3AED"]} style={styles.gradient}>
-      <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={styles.root}>
+      <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={[styles.purpleZone, { paddingTop: topPad }]}>
         {/* Back */}
         <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={18} color="rgba(255,255,255,0.8)" />
@@ -278,10 +274,17 @@ export default function RegisterScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+      </LinearGradient>
 
+      <View style={styles.whitePanel}>
+        <ScrollView
+          contentContainerStyle={[styles.panelScroll, { paddingBottom: botPad }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         {/* ── Student form ── */}
         {role === "student" && (
-          <View style={styles.card}>
+          <View>
             {!!error && (
               <View style={styles.errorBanner}>
                 <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
@@ -529,7 +532,7 @@ export default function RegisterScreen() {
 
         {/* ── Teacher form ── */}
         {role === "teacher" && (
-          <View style={styles.card}>
+          <View>
             {!!error && (
               <View style={styles.errorBanner}>
                 <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
@@ -687,20 +690,34 @@ export default function RegisterScreen() {
             </Text>
           </View>
         )}
-      </ScrollView>
-    </LinearGradient>
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: 20 },
+  root: { flex: 1, backgroundColor: "#fff" },
+  purpleZone: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+  },
+  whitePanel: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    marginTop: -28,
+    overflow: "hidden",
+  },
+  panelScroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24 },
   backLink: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    marginBottom: 24, alignSelf: "flex-start",
+    marginBottom: 18, alignSelf: "flex-start",
   },
   backLinkText: { color: "rgba(255,255,255,0.8)", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  hero: { alignItems: "center", marginBottom: 24 },
+  hero: { alignItems: "center", marginBottom: 16 },
   heroIcon: {
     width: 72, height: 72, borderRadius: 36,
     backgroundColor: "rgba(255,255,255,0.15)",
@@ -725,12 +742,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.5)",
   },
   roleTabTextActive: { color: "#fff" },
-  card: {
-    backgroundColor: "#fff", borderRadius: 24,
-    padding: 22,
-    boxShadow: "0px 12px 24px rgba(0,0,0,0.25)",
-    elevation: 12, marginBottom: 16,
-  },
   errorBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,
     backgroundColor: "#FEE2E2", borderRadius: 10, padding: 12, marginBottom: 16,
