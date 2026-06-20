@@ -22,7 +22,7 @@ export default function StudentHome() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { classes, contributions, events, announcements, attendedClasses, markAttendance } = useData();
+  const { classes, contributions, events, announcements, attendedClasses, markAttendance, notifications } = useData();
   const [scanSuccess, setScanSuccess] = useState(false);
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
@@ -69,6 +69,26 @@ export default function StudentHome() {
             <Text style={styles.greeting}>{greeting}</Text>
             <Text style={styles.name}>{firstName}</Text>
           </View>
+          {/* Bell icon with unread badge */}
+          <TouchableOpacity
+            style={styles.bellBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/(student)/notifications");
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+            {notifications.filter((n) => !n.isRead).length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {notifications.filter((n) => !n.isRead).length > 9
+                    ? "9+"
+                    : notifications.filter((n) => !n.isRead).length}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.avatar}
             onPress={() => router.push("/(student)/profile")}
@@ -260,6 +280,21 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 24 },
   greeting: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)" },
   name: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#FFFFFF", marginTop: 2 },
+  bellBtn: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
+  },
+  badge: {
+    position: "absolute", top: -4, right: -4,
+    minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: "#EF4444",
+    alignItems: "center", justifyContent: "center",
+    paddingHorizontal: 3,
+    borderWidth: 1.5, borderColor: "#2D1B69",
+  },
+  badgeText: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#fff" },
   avatar: {
     width: 50, height: 50, borderRadius: 25,
     backgroundColor: "rgba(255,255,255,0.2)",

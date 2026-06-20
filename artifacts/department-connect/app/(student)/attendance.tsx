@@ -1,15 +1,19 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import Svg, { Rect, Line } from "react-native-svg";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -41,17 +45,94 @@ function getStatusColor(pct: number, colors: any) {
   return colors.destructive;
 }
 
+const FRAME_SIZE = 220;
+const CORNER = 28;
+
+function QRFrame({ scanLine }: { scanLine: Animated.Value }) {
+  const top = scanLine.interpolate({ inputRange: [0, 1], outputRange: [0, FRAME_SIZE - 4] });
+  return (
+    <View style={{ width: FRAME_SIZE, height: FRAME_SIZE }}>
+      <Svg width={FRAME_SIZE} height={FRAME_SIZE}>
+        {/* TL */}
+        <Rect x={0} y={0} width={CORNER} height={4} fill="#7C3AED" rx={2} />
+        <Rect x={0} y={0} width={4} height={CORNER} fill="#7C3AED" rx={2} />
+        {/* TR */}
+        <Rect x={FRAME_SIZE - CORNER} y={0} width={CORNER} height={4} fill="#7C3AED" rx={2} />
+        <Rect x={FRAME_SIZE - 4} y={0} width={4} height={CORNER} fill="#7C3AED" rx={2} />
+        {/* BL */}
+        <Rect x={0} y={FRAME_SIZE - 4} width={CORNER} height={4} fill="#7C3AED" rx={2} />
+        <Rect x={0} y={FRAME_SIZE - CORNER} width={4} height={CORNER} fill="#7C3AED" rx={2} />
+        {/* BR */}
+        <Rect x={FRAME_SIZE - CORNER} y={FRAME_SIZE - 4} width={CORNER} height={4} fill="#7C3AED" rx={2} />
+        <Rect x={FRAME_SIZE - 4} y={FRAME_SIZE - CORNER} width={4} height={CORNER} fill="#7C3AED" rx={2} />
+      </Svg>
+      {/* Animated scan line */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          left: 4,
+          right: 4,
+          height: 2,
+          borderRadius: 1,
+          backgroundColor: "#7C3AED",
+          opacity: 0.8,
+          top,
+          shadowColor: "#7C3AED",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 4,
+        }}
+      />
+    </View>
+  );
+}
+
 export default function AttendanceScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { attendanceS1 } = useData();
+  const { attendanceS1, markAttendance, attendedClasses, classes } = useData();
+
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<"idle" | "success" | "already">("idle");
+  const scanLine = useRef(new Animated.Value(0)).current;
+  const scanLoopRef = useRef<any>(null);
 
   const overall = Math.round(
     attendanceS1.reduce((s, r) => s + r.percentage, 0) / attendanceS1.length
   );
   const overallColor = getStatusColor(overall, colors);
-
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
+
+  const todayClasses = classes.filter((c) => c.date === "2026-06-20");
+  const unattended = todayClasses.find((c) => !attendedClasses.includes(c.id));
+
+  const startScan = () => {
+    setScanResult("idle");
+    setScanning(true);
+    scanLine.setValue(0);
+    scanLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scanLine, { toValue: 1, duration: 1100, useNativeDriver: false }),
+        Animated.timing(scanLine, { toValue: 0, duration: 1100, useNativeDriver: false }),
+      ])
+    );
+    scanLoopRef.current.start();
+
+    setTimeout(() => {
+      scanLoopRef.current?.stop();
+      if (unattended) {
+        markAttendance(unattended.id);
+        setScanResult("success");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        setScanResult("already");
+      }
+      setTimeout(() => {
+        setScanning(false);
+        setScanResult("idle");
+      }, 1800);
+    }, 2600);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -59,8 +140,20 @@ export default function AttendanceScreen() {
         colors={[colors.gradientStart, colors.gradientEnd]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
-        <Text style={styles.title}>Attendance</Text>
-        <Text style={styles.subtitle}>2025/2026 · 1st Semester</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.title}>Attendance</Text>
+            <Text style={styles.subtitle}>2025/2026 · 1st Semester</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.scanBtn}
+            onPress={startScan}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="qr-code-outline" size={18} color="#7C3AED" />
+            <Text style={styles.scanBtnText}>Scan QR</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.overallCard}>
           <View style={styles.overallLeft}>
@@ -142,14 +235,63 @@ export default function AttendanceScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* QR Scanner Modal */}
+      <Modal visible={scanning} transparent animationType="fade" statusBarTranslucent>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            {scanResult === "idle" ? (
+              <>
+                <Text style={styles.modalTitle}>Scanning…</Text>
+                <Text style={styles.modalSub}>Hold the QR code steady inside the frame</Text>
+                <View style={styles.frameWrap}>
+                  {/* Dark viewfinder area */}
+                  <View style={styles.viewfinder} />
+                  <View style={styles.frameOverlay}>
+                    <QRFrame scanLine={scanLine} />
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => { setScanning(false); scanLoopRef.current?.stop(); }}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            ) : scanResult === "success" ? (
+              <>
+                <View style={styles.resultIcon}>
+                  <Ionicons name="checkmark-circle" size={56} color="#10B981" />
+                </View>
+                <Text style={styles.resultTitle}>Attendance Marked!</Text>
+                <Text style={styles.resultSub}>
+                  {unattended ? `${unattended.courseCode} — ${unattended.courseName}` : "Class recorded"}
+                </Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.resultIcon}>
+                  <Ionicons name="information-circle" size={56} color="#F59E0B" />
+                </View>
+                <Text style={styles.resultTitle}>Already Marked</Text>
+                <Text style={styles.resultSub}>Your attendance for today is already recorded.</Text>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 24 },
+  headerTop: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 },
   title: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#fff" },
-  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.65)", marginTop: 2, marginBottom: 20 },
+  subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.65)", marginTop: 2 },
+  scanBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#fff", borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 8, marginTop: 4,
+  },
+  scanBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
   overallCard: {
     backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 20,
@@ -192,4 +334,36 @@ const styles = StyleSheet.create({
   legendRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendLabel: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.82)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCard: {
+    width: 300,
+    backgroundColor: "#1A0A3B",
+    borderRadius: 28,
+    padding: 28,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#3B1D8A",
+  },
+  modalTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff", marginBottom: 6 },
+  modalSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", textAlign: "center", marginBottom: 24 },
+  frameWrap: { width: FRAME_SIZE, height: FRAME_SIZE, marginBottom: 28, borderRadius: 16, overflow: "hidden" },
+  viewfinder: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+  },
+  frameOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  cancelBtn: {
+    paddingHorizontal: 28, paddingVertical: 10,
+    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 20,
+  },
+  cancelText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.8)" },
+  resultIcon: { marginBottom: 14 },
+  resultTitle: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff", marginBottom: 6 },
+  resultSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", textAlign: "center" },
 });

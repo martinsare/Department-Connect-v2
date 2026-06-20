@@ -28,10 +28,6 @@ function NativeTabLayout() {
         <Icon sf={{ default: "creditcard", selected: "creditcard.fill" }} />
         <Label>Payments</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="notifications">
-        <Icon sf={{ default: "bell", selected: "bell.fill" }} />
-        <Label>Inbox</Label>
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: "person.circle", selected: "person.circle.fill" }} />
         <Label>Profile</Label>
@@ -119,18 +115,6 @@ function ClassicTabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Inbox",
-          tabBarIcon: ({ color, focused }) =>
-            isIOS ? (
-              <SymbolView name={focused ? "bell.fill" : "bell"} tintColor={color} size={22} />
-            ) : (
-              <Ionicons name={focused ? "notifications" : "notifications-outline"} size={22} color={color} />
-            ),
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
@@ -141,6 +125,11 @@ function ClassicTabLayout() {
               <Ionicons name={focused ? "person-circle" : "person-circle-outline"} size={22} color={color} />
             ),
         }}
+      />
+      {/* Notifications accessible via bell icon — hidden from tab bar */}
+      <Tabs.Screen
+        name="notifications"
+        options={{ tabBarButton: () => null, title: "Notifications" }}
       />
     </Tabs>
   );
