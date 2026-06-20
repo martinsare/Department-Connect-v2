@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -97,7 +98,8 @@ export default function OnboardingScreen() {
         <View />
         {!isLast && (
           <TouchableOpacity onPress={handleGetStarted} style={styles.skipBtn} activeOpacity={0.7}>
-            <Text style={styles.skipText}>Skip  ›</Text>
+            <Text style={styles.skipText}>Skip</Text>
+            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.6)" />
           </TouchableOpacity>
         )}
       </View>
@@ -144,9 +146,15 @@ export default function OnboardingScreen() {
           activeOpacity={0.85}
         >
           {isLast ? (
-            <Text style={styles.nextBtnText}>🚀  Get Started</Text>
+            <>
+              <Ionicons name="rocket-outline" size={18} color="#fff" />
+              <Text style={styles.nextBtnText}>Get Started</Text>
+            </>
           ) : (
-            <Text style={styles.nextBtnText}>Next  →</Text>
+            <>
+              <Text style={styles.nextBtnText}>Next</Text>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            </>
           )}
         </TouchableOpacity>
 
