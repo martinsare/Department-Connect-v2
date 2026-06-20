@@ -23,7 +23,7 @@ const QR_TOKEN = "DEPT_CONNECT_2026";
 const FRAME = 240;
 const CORNER = 30;
 
-function AnimatedBar({ percentage, color, key: _k }: { percentage: number; color: string; key?: any }) {
+function AnimatedBar({ percentage, color }: { percentage: number; color: string }) {
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     anim.setValue(0);
