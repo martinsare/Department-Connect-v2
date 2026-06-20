@@ -12,7 +12,7 @@ type Feature = {
   description: string;
   icon: keyof typeof Ionicons.glyphMap;
   enabled: boolean;
-  locked?: boolean;
+  dangerous?: boolean;
 };
 
 export default function ConfigScreen() {
@@ -27,14 +27,33 @@ export default function ConfigScreen() {
     { id: "push_notifs", label: "Push Notifications", description: "Send FCM push notifications to devices", icon: "notifications-outline", enabled: true },
     { id: "approval_flow", label: "Approval Flow", description: "Require Admin approval before student accounts become active", icon: "shield-checkmark-outline", enabled: true },
     { id: "analytics", label: "Analytics Dashboard", description: "Show attendance and payment analytics to Admin users", icon: "stats-chart-outline", enabled: true },
-    { id: "maintenance_mode", label: "Maintenance Mode", description: "Put the app in read-only maintenance mode", icon: "construct-outline", enabled: false, locked: true },
+    { id: "maintenance_mode", label: "Maintenance Mode", description: "Put the app in read-only maintenance mode for all users", icon: "construct-outline", enabled: false, dangerous: true },
   ]);
 
   const toggleFeature = (id: string) => {
-    setFeatures((prev) =>
-      prev.map((f) => (f.id === id && !f.locked ? { ...f, enabled: !f.enabled } : f))
-    );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const feature = features.find((f) => f.id === id);
+    if (!feature) return;
+
+    if (feature.dangerous && !feature.enabled) {
+      Alert.alert(
+        "Enable Maintenance Mode?",
+        "This will put the entire app in read-only mode. Students and admins will not be able to make changes until you turn this off.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Enable",
+            style: "destructive",
+            onPress: () => {
+              setFeatures((prev) => prev.map((f) => f.id === id ? { ...f, enabled: true } : f));
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            },
+          },
+        ]
+      );
+    } else {
+      setFeatures((prev) => prev.map((f) => f.id === id ? { ...f, enabled: !f.enabled } : f));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
   };
 
   return (
@@ -72,8 +91,10 @@ export default function ConfigScreen() {
               <View style={{ flex: 1 }}>
                 <View style={styles.featureLabelRow}>
                   <Text style={[styles.featureLabel, { color: colors.foreground }]}>{f.label}</Text>
-                  {f.locked && (
-                    <Ionicons name="lock-closed-outline" size={12} color={colors.mutedForeground} />
+                  {f.dangerous && (
+                    <View style={styles.dangerTag}>
+                      <Text style={styles.dangerTagText}>Destructive</Text>
+                    </View>
                   )}
                 </View>
                 <Text style={[styles.featureDesc, { color: colors.mutedForeground }]}>{f.description}</Text>
@@ -81,8 +102,7 @@ export default function ConfigScreen() {
               <Switch
                 value={f.enabled}
                 onValueChange={() => toggleFeature(f.id)}
-                disabled={f.locked}
-                trackColor={{ false: colors.border, true: colors.primary }}
+                trackColor={{ false: colors.border, true: f.dangerous ? "#EF4444" : colors.primary }}
                 thumbColor="#fff"
               />
             </View>
@@ -154,8 +174,10 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontFamily: "Inter_700Bold", padding: 16, paddingBottom: 12 },
   featureRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   featureIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  featureLabelRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  featureLabelRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   featureLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  dangerTag: { backgroundColor: "#FEE2E2", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  dangerTagText: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#DC2626" },
   featureDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
   infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 14 },
   infoLabel: { fontSize: 13, fontFamily: "Inter_400Regular" },
