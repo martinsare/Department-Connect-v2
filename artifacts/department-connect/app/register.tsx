@@ -70,6 +70,8 @@ export default function RegisterScreen() {
   const [tFirstName, setTFirstName] = useState("");
   const [tSurname, setTSurname] = useState("");
   const [tStaffId, setTStaffId] = useState("");
+  const [tDepartment, setTDepartment] = useState("");
+  const [showTDeptPicker, setShowTDeptPicker] = useState(false);
   const [tSubRole, setTSubRole] = useState<"Lecturer" | "Course Representative" | "Department Executive">("Lecturer");
   const [tPhone, setTPhone] = useState("");
   const [tEmail, setTEmail] = useState("");
@@ -147,6 +149,7 @@ export default function RegisterScreen() {
     if (!tFirstName.trim()) return setError("First name is required.");
     if (!tSurname.trim()) return setError("Surname is required.");
     if (!tStaffId.trim()) return setError("Staff ID is required.");
+    if (!tDepartment) return setError("Please select your department.");
     if (!tPassword) return setError("Password is required.");
     if (tPassword.length < 6) return setError("Password must be at least 6 characters.");
     if (tPassword !== tConfirmPassword) return setError("Passwords do not match.");
@@ -167,7 +170,7 @@ export default function RegisterScreen() {
       role: "admin",
       subRole: tSubRole,
       staffId: staffIdNorm,
-      department: "Computer Science",
+      department: tDepartment,
       phone: tPhone.trim(),
       email: tEmail.trim(),
       dob: "",
@@ -456,7 +459,7 @@ export default function RegisterScreen() {
           </View>
         )}
 
-        {/* Department picker modal */}
+        {/* Student department picker modal */}
         <Modal
           visible={showDeptPicker}
           transparent
@@ -472,34 +475,52 @@ export default function RegisterScreen() {
                 {DEPARTMENTS.map((dept) => (
                   <TouchableOpacity
                     key={dept}
-                    style={[
-                      styles.pickerItem,
-                      department === dept && styles.pickerItemActive,
-                    ]}
-                    onPress={() => {
-                      setDepartment(dept);
-                      setShowDeptPicker(false);
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}
+                    style={[styles.pickerItem, department === dept && styles.pickerItemActive]}
+                    onPress={() => { setDepartment(dept); setShowDeptPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[
-                      styles.pickerItemText,
-                      department === dept && styles.pickerItemTextActive,
-                    ]}>
+                    <Text style={[styles.pickerItemText, department === dept && styles.pickerItemTextActive]}>
                       {dept}
                     </Text>
-                    {department === dept && (
-                      <Ionicons name="checkmark" size={18} color="#7C3AED" />
-                    )}
+                    {department === dept && <Ionicons name="checkmark" size={18} color="#7C3AED" />}
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              <TouchableOpacity
-                style={styles.pickerCancel}
-                onPress={() => setShowDeptPicker(false)}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={styles.pickerCancel} onPress={() => setShowDeptPicker(false)} activeOpacity={0.8}>
+                <Text style={styles.pickerCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Admin department picker modal */}
+        <Modal
+          visible={showTDeptPicker}
+          transparent
+          animationType="slide"
+          statusBarTranslucent
+          onRequestClose={() => setShowTDeptPicker(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.pickerSheet}>
+              <View style={styles.pickerHandle} />
+              <Text style={styles.pickerTitle}>Select Department</Text>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
+                {DEPARTMENTS.map((dept) => (
+                  <TouchableOpacity
+                    key={dept}
+                    style={[styles.pickerItem, tDepartment === dept && styles.pickerItemActive]}
+                    onPress={() => { setTDepartment(dept); setShowTDeptPicker(false); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.pickerItemText, tDepartment === dept && styles.pickerItemTextActive]}>
+                      {dept}
+                    </Text>
+                    {tDepartment === dept && <Ionicons name="checkmark" size={18} color="#7C3AED" />}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              <TouchableOpacity style={styles.pickerCancel} onPress={() => setShowTDeptPicker(false)} activeOpacity={0.8}>
                 <Text style={styles.pickerCancelText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -633,10 +654,17 @@ export default function RegisterScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.deptBadge}>
-              <Ionicons name="school-outline" size={14} color="#7C3AED" />
-              <Text style={styles.deptText}>Department: Computer Science · {tSubRole}</Text>
-            </View>
+            <Text style={[styles.label, { marginTop: 14 }]}>Department *</Text>
+            <TouchableOpacity
+              style={[styles.input, styles.dropdownBtn]}
+              onPress={() => { setShowTDeptPicker(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.dropdownBtnText, !tDepartment && { color: "#94A3B8" }]}>
+                {tDepartment || "Select your department"}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="#94A3B8" />
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.submitBtn, loading && { opacity: 0.6 }]}
