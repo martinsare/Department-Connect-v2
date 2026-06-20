@@ -37,6 +37,8 @@ interface AuthContextValue {
   login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateUser: (updates: Partial<AuthUser>) => void;
+  addAdmin: (admin: Omit<AuthUser, "id"> & { password: string }) => void;
+  allUsers: (AuthUser & { password: string })[];
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -216,13 +218,13 @@ const DEMO_DEV: AuthUser & { password: string } = {
   password: "password",
 };
 
-const ALL_USERS = [...DEMO_STUDENTS, ...DEMO_ADMINS, DEMO_DEV];
-
 const STORAGE_KEY = "dc_auth_user";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [adminList, setAdminList] = useState<(AuthUser & { password: string })[]>([...DEMO_ADMINS]);
+  const adminRef = React.useRef<(AuthUser & { password: string })[]>([...DEMO_ADMINS]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -241,13 +243,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
+  const addAdmin = useCallback((admin: Omit<AuthUser, "id"> & { password: string }) => {
+    const newAdmin: AuthUser & { password: string } = { ...admin, id: `a${Date.now()}` };
+    adminRef.current = [...adminRef.current, newAdmin];
+    setAdminList([...adminRef.current]);
+  }, []);
+
   const login = useCallback(
     async (identifier: string, password: string): Promise<{ success: boolean; error?: string }> => {
       setIsLoading(true);
       await new Promise((r) => setTimeout(r, 600));
 
       const lower = identifier.toLowerCase().trim();
-      const found = ALL_USERS.find(
+      const allUsers = [...DEMO_STUDENTS, ...adminRef.current, DEMO_DEV];
+      const found = allUsers.find(
         (u) =>
           u.matricNumber?.toLowerCase() === lower ||
           u.surname.toLowerCase() === lower ||
@@ -310,8 +319,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const allUsers = React.useMemo(
+    () => [...DEMO_STUDENTS, ...adminList, DEMO_DEV],
+    [adminList]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser, addAdmin, allUsers }}>
       {children}
     </AuthContext.Provider>
   );
