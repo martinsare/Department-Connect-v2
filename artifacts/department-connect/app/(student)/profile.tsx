@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import { formatDob } from "@/utils/formatDob";
 
 function InfoRow({ label, value, editable = false }: { label: string; value: string; editable?: boolean }) {
   const colors = useColors();
@@ -51,6 +52,7 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [birthdayPrivacy, setBirthdayPrivacy] = useState(user?.birthdayPrivacy ?? false);
+  const [hideYear, setHideYear] = useState(user?.hideYear ?? true);
   const [editing, setEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPwd, setCurrentPwd] = useState("");
@@ -137,7 +139,7 @@ export default function ProfileScreen() {
           <InfoRow label="First Name" value={user?.firstName ?? ""} />
           <InfoRow label="Surname" value={user?.surname ?? ""} />
           <InfoRow label="Matric Number" value={user?.matricNumber ?? ""} />
-          <InfoRow label="Date of Birth" value={user?.dob ?? ""} />
+          <InfoRow label="Date of Birth" value={formatDob(user?.dob, true)} />
           <InfoRow label="Level" value={user?.level ?? ""} />
           <InfoRow label="Department" value={user?.department ?? ""} />
         </View>
@@ -185,7 +187,28 @@ export default function ProfileScreen() {
 
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Privacy Settings</Text>
+
           <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.switchLabel, { color: colors.foreground }]}>
+                Hide birth year from staff
+              </Text>
+              <Text style={[styles.switchDesc, { color: colors.mutedForeground }]}>
+                When on, admins only see your birth month and day — not the year
+              </Text>
+            </View>
+            <Switch
+              value={hideYear}
+              onValueChange={(v) => {
+                setHideYear(v);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                updateUser({ hideYear: v });
+              }}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          </View>
+
+          <View style={[styles.switchRow, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14 }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.switchLabel, { color: colors.foreground }]}>
                 Share birthday with department

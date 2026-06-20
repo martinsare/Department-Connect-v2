@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useData, type StudentRecord } from "@/context/DataContext";
+import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
 
 export default function ApprovalsScreen() {
@@ -88,7 +89,7 @@ export default function ApprovalsScreen() {
               </View>
               <View style={styles.infoItem}>
                 <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>DOB</Text>
-                <Text style={[styles.infoValue, { color: colors.foreground }]}>{s.dob}</Text>
+                <Text style={[styles.infoValue, { color: colors.foreground }]}>{formatDob(s.dob, s.hideYear ?? true)}</Text>
               </View>
               <View style={styles.infoItem}>
                 <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>Submitted</Text>

@@ -20,6 +20,7 @@ export interface StudentRecord {
   phone: string;
   email: string;
   dob: string;
+  hideYear?: boolean;
   status: StudentStatus;
   submittedAt?: string;
   rejectionReason?: string;
@@ -119,6 +120,7 @@ const STUDENTS: StudentRecord[] = [
     phone: "08012345678",
     email: "tolu.adeyemi@example.com",
     dob: "1998-03-15",
+    hideYear: true,
     status: "active",
   },
   {
@@ -131,6 +133,7 @@ const STUDENTS: StudentRecord[] = [
     phone: "08023456789",
     email: "chidi@example.com",
     dob: "1998-07-22",
+    hideYear: false,
     status: "active",
   },
   {
@@ -156,6 +159,7 @@ const STUDENTS: StudentRecord[] = [
     phone: "08045678901",
     email: "peter@example.com",
     dob: "1997-05-18",
+    hideYear: false,
     status: "active",
   },
   {
@@ -194,6 +198,7 @@ const STUDENTS: StudentRecord[] = [
     phone: "08078901234",
     email: "rukayat@example.com",
     dob: "2000-04-25",
+    hideYear: true,
     status: "active",
   },
   {

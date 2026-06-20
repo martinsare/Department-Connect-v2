@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useData, type StudentStatus } from "@/context/DataContext";
+import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
 
 const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L"];
@@ -230,7 +231,7 @@ export default function StudentsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.studentName, { color: colors.foreground }]}>{s.firstName} {s.surname}</Text>
-                <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>{s.matricNumber}  ·  {s.dob}</Text>
+                <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>{s.matricNumber}  ·  {formatDob(s.dob, s.hideYear ?? true)}</Text>
                 <View style={styles.studentBottom}>
                   <Text style={[styles.studentLevel, { color: colors.primary }]}>{s.level}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
@@ -281,7 +282,7 @@ export default function StudentsScreen() {
 
                   {/* Info rows */}
                   {[
-                    { label: "Date of Birth", value: detailStudent.dob, icon: "calendar-outline" as const },
+                    { label: "Date of Birth", value: formatDob(detailStudent.dob, detailStudent.hideYear ?? true), icon: "calendar-outline" as const },
                     { label: "Phone", value: detailStudent.phone || "—", icon: "call-outline" as const },
                     { label: "Email", value: detailStudent.email || "—", icon: "mail-outline" as const },
                     { label: "Submitted", value: detailStudent.submittedAt || "—", icon: "time-outline" as const },

@@ -29,6 +29,7 @@ export interface AuthUser {
   status?: string;
   subRole?: AdminSubRole;
   birthdayPrivacy?: boolean;
+  hideYear?: boolean;
 }
 
 interface AuthContextValue {
@@ -57,6 +58,7 @@ const DEMO_STUDENTS: (AuthUser & { password: string })[] = [
     dob: "1998-03-15",
     status: "active",
     birthdayPrivacy: true,
+    hideYear: true,
     password: "password",
   },
   {
