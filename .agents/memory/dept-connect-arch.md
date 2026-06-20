@@ -43,8 +43,10 @@ Full Paystack-style demo card modal: card number auto-formats, shows processing 
 
 ## Port and CORS
 - Workflow: `PORT=8080`
-- artifact.toml: `localPort=8080`, `router="expo-domain"`
+- artifact.toml (department-connect): `localPort=8080`, `router="expo-domain"`
+- artifact.toml (api-server): `localPort=3001` — was 8080, caused conflict; fixed via verifyAndReplaceArtifactToml
 - app.config.js: `extra.router.origin = https://${REPLIT_DEV_DOMAIN}:8080`
+- **When all workflows start simultaneously they all try port 8080 — if api-server grabs it first, Expo fails. Fix: restart api-server first (picks up new port from TOML), then restart Department Connect.**
 
 ## QR attendance
 expo-camera is NOT installed. Tap-to-mark simulated. Real scanning needs expo-camera + Supabase.
