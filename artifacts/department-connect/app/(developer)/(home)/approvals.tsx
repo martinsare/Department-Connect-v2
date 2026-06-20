@@ -82,7 +82,7 @@ export default function ApprovalsScreen() {
             {t.firstName} {t.surname}
           </Text>
           <Text style={[styles.meta, { color: colors.mutedForeground }]}>
-            {t.staffId}  ·  Lecturer
+            {t.staffId}  ·  {t.subRole}
           </Text>
           {t.email ? (
             <Text style={[styles.email, { color: colors.mutedForeground }]}>{t.email}</Text>
@@ -134,9 +134,9 @@ export default function ApprovalsScreen() {
         colors={[colors.gradientStart, colors.gradientEnd]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
-        <Text style={styles.headerTitle}>Teacher Approvals</Text>
+        <Text style={styles.headerTitle}>Admin Approvals</Text>
         <Text style={styles.headerSub}>
-          Review and approve teacher registration requests
+          Review and approve admin registration requests
         </Text>
       </LinearGradient>
 
@@ -165,9 +165,9 @@ export default function ApprovalsScreen() {
             <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
               <Ionicons name="person-add-outline" size={40} color={colors.mutedForeground} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No Teacher Requests</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No Admin Requests</Text>
             <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>
-              Teacher registration requests will appear here for review.
+              Admin registration requests will appear here for review.
             </Text>
           </View>
         }

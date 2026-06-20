@@ -66,10 +66,11 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  /* ── Teacher fields ── */
+  /* ── Admin fields ── */
   const [tFirstName, setTFirstName] = useState("");
   const [tSurname, setTSurname] = useState("");
   const [tStaffId, setTStaffId] = useState("");
+  const [tSubRole, setTSubRole] = useState<"Lecturer" | "Course Representative" | "Department Executive">("Lecturer");
   const [tPhone, setTPhone] = useState("");
   const [tEmail, setTEmail] = useState("");
   const [tPassword, setTPassword] = useState("");
@@ -164,9 +165,9 @@ export default function RegisterScreen() {
       firstName: tFirstName.trim(),
       surname: tSurname.trim(),
       role: "admin",
-      subRole: "Lecturer",
+      subRole: tSubRole,
       staffId: staffIdNorm,
-      department: DEPARTMENT,
+      department: "Computer Science",
       phone: tPhone.trim(),
       email: tEmail.trim(),
       dob: "",
@@ -197,14 +198,14 @@ export default function RegisterScreen() {
           </Text>
           <Text style={styles.successBody}>
             {isTeacher
-              ? "Your teacher application is now pending review by the Super Admin. You'll be able to log in once approved."
+              ? "Your admin application is now pending review by the Super Admin. You'll be able to log in once approved."
               : "Your account is pending approval from Admin. You'll be able to log in once approved."}
           </Text>
           {isTeacher && (
             <View style={styles.infoNote}>
               <Ionicons name="shield-checkmark-outline" size={16} color="#7C3AED" />
               <Text style={styles.infoNoteText}>
-                Super Admin will review your credentials and approve or reject your account.
+                Super Admin will review your credentials and approve or reject your admin account.
               </Text>
             </View>
           )}
@@ -270,7 +271,7 @@ export default function RegisterScreen() {
               color={role === "teacher" ? "#fff" : "rgba(255,255,255,0.5)"}
             />
             <Text style={[styles.roleTabText, role === "teacher" && styles.roleTabTextActive]}>
-              Teacher
+              Admin
             </Text>
           </TouchableOpacity>
         </View>
@@ -518,7 +519,7 @@ export default function RegisterScreen() {
             <View style={styles.teacherBanner}>
               <Ionicons name="shield-checkmark-outline" size={16} color="#7C3AED" />
               <Text style={styles.teacherBannerText}>
-                Teacher accounts are reviewed and approved by <Text style={{ fontFamily: "Inter_700Bold" }}>Super Admin</Text> before activation.
+                Admin accounts are reviewed and approved by <Text style={{ fontFamily: "Inter_700Bold" }}>Super Admin</Text> before activation.
               </Text>
             </View>
 
@@ -559,6 +560,22 @@ export default function RegisterScreen() {
               autoCapitalize="characters"
               autoCorrect={false}
             />
+
+            <Text style={[styles.label, { marginTop: 14 }]}>Position / Role *</Text>
+            <View style={styles.levelRow}>
+              {(["Lecturer", "Course Representative", "Department Executive"] as const).map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.levelChip, tSubRole === r && styles.levelChipActive]}
+                  onPress={() => { setTSubRole(r); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.levelChipText, tSubRole === r && styles.levelChipTextActive]}>
+                    {r}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <Text style={[styles.label, { marginTop: 14 }]}>Phone</Text>
             <TextInput
@@ -618,7 +635,7 @@ export default function RegisterScreen() {
 
             <View style={styles.deptBadge}>
               <Ionicons name="school-outline" size={14} color="#7C3AED" />
-              <Text style={styles.deptText}>Department: Computer Science · Lecturer</Text>
+              <Text style={styles.deptText}>Department: Computer Science · {tSubRole}</Text>
             </View>
 
             <TouchableOpacity
@@ -638,7 +655,7 @@ export default function RegisterScreen() {
             </TouchableOpacity>
 
             <Text style={styles.note}>
-              Your application will be reviewed by Super Admin. Login access is granted upon approval.
+              Your admin account will be reviewed by Super Admin. Login access is granted upon approval.
             </Text>
           </View>
         )}
