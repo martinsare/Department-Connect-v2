@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Alert,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
@@ -21,46 +24,54 @@ function StatCard({
   icon,
   color,
   sub,
+  onPress,
 }: {
   label: string;
   value: string | number;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
   sub?: string;
+  onPress?: () => void;
 }) {
   const colors = useColors();
   return (
-    <View style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <TouchableOpacity
+      style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.8 : 1}
+    >
       <View style={[cardStyles.iconWrap, { backgroundColor: color + "18" }]}>
         <Ionicons name={icon} size={20} color={color} />
       </View>
       <Text style={[cardStyles.value, { color: colors.foreground }]}>{value}</Text>
       <Text style={[cardStyles.label, { color: colors.mutedForeground }]}>{label}</Text>
       {sub && <Text style={[cardStyles.sub, { color: color }]}>{sub}</Text>}
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const cardStyles = StyleSheet.create({
-  card: {
-    flex: 1,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    gap: 4,
-    minWidth: "45%",
-  },
+  card: { flex: 1, borderRadius: 16, borderWidth: 1, padding: 14, gap: 4, minWidth: "45%" },
   iconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   value: { fontSize: 22, fontFamily: "Inter_700Bold" },
   label: { fontSize: 12, fontFamily: "Inter_400Regular" },
   sub: { fontSize: 11, fontFamily: "Inter_600SemiBold", marginTop: 2 },
 });
 
+const TARGET_OPTIONS = ["All Students", "100L", "200L", "300L", "400L", "500L"];
+const CATEGORIES = ["Academic", "Administrative", "Financial", "Social", "Urgent"];
+
 export default function AdminDashboard() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
-  const { students, classes, announcements } = useData();
+  const { students, classes, announcements, contributions, events, addAnnouncement } = useData();
+  const [showAnnounce, setShowAnnounce] = useState(false);
+  const [annTitle, setAnnTitle] = useState("");
+  const [annBody, setAnnBody] = useState("");
+  const [annTarget, setAnnTarget] = useState("All Students");
+  const [annCategory, setAnnCategory] = useState("Academic");
+  const [posting, setPosting] = useState(false);
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const activeStudents = students.filter((s) => s.status === "active").length;
@@ -72,6 +83,34 @@ export default function AdminDashboard() {
   const totalCapacity = classes.length * 25;
   const attRate = Math.round((totalAttended / totalCapacity) * 100);
 
+  const totalContributions = contributions.reduce((s, c) => s + c.amount, 0);
+  const paidContributions = contributions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
+  const outstandingPayments = contributions.filter((c) => c.status === "unpaid").length;
+
+  const upcomingEvents = events.filter((e) => e.date >= "2026-06-20").slice(0, 2);
+
+  const handlePostAnnouncement = async () => {
+    if (!annTitle.trim() || !annBody.trim()) {
+      Alert.alert("Missing Fields", "Please fill in both title and message.");
+      return;
+    }
+    setPosting(true);
+    await new Promise((r) => setTimeout(r, 500));
+    addAnnouncement({
+      title: annTitle.trim(),
+      body: annBody.trim(),
+      postedBy: `${user?.firstName} ${user?.surname} (${user?.subRole ?? "Admin"})`,
+      time: "Just now",
+      category: annCategory,
+      targetAudience: annTarget,
+    });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setPosting(false);
+    setShowAnnounce(false);
+    setAnnTitle(""); setAnnBody("");
+    Alert.alert("Announcement Posted", `Your announcement has been sent to ${annTarget}.`);
+  };
+
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure?", [
       { text: "Cancel", style: "cancel" },
@@ -82,134 +121,232 @@ export default function AdminDashboard() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
-        colors={["#0D2B7E", "#1B4FD8"]}
+        colors={[colors.gradientStart, colors.gradientEnd]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.subRole}>{user?.subRole ?? "Admin"}</Text>
+            <Text style={styles.greeting}>Admin Panel</Text>
             <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
+            <Text style={styles.role}>{user?.subRole ?? "Admin"}  ·  {user?.department}</Text>
           </View>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
             <Ionicons name="log-out-outline" size={20} color="rgba(255,255,255,0.8)" />
           </TouchableOpacity>
         </View>
+
+        <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
+            onPress={() => setShowAnnounce(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="megaphone-outline" size={18} color="#fff" />
+            <Text style={styles.quickBtnText}>Announce</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
+            onPress={() => Alert.alert("Export", "Analytics export will open the reports screen.")}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="bar-chart-outline" size={18} color="#fff" />
+            <Text style={styles.quickBtnText}>Analytics</Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: insets.bottom + (Platform.OS === "web" ? 84 : 90) },
-        ]}
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + (Platform.OS === "web" ? 84 : 90) }]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Overview</Text>
         <View style={styles.statsGrid}>
-          <StatCard label="Active Students" value={activeStudents} icon="people" color={colors.primary} />
+          <StatCard label="Active Students" value={activeStudents} icon="people" color="#3B82F6" />
           <StatCard
             label="Pending Approvals"
             value={pendingStudents.length}
-            icon="time-outline"
-            color={colors.warning}
-            sub={pendingStudents.length > 0 ? "Needs attention" : undefined}
+            icon="hourglass-outline"
+            color={pendingStudents.length > 0 ? "#F59E0B" : "#10B981"}
+            sub={pendingStudents.length > 0 ? "Tap to review" : "All clear"}
           />
-          <StatCard label="Today's Classes" value={todayClasses.length} icon="calendar" color={colors.info} />
-          <StatCard label="Attendance Rate" value={`${attRate}%`} icon="stats-chart" color={colors.success} />
+          <StatCard label="Admin Users" value={totalAdmins} icon="shield-outline" color="#8B5CF6" />
+          <StatCard
+            label="Today's Classes"
+            value={todayClasses.length}
+            icon="school-outline"
+            color="#10B981"
+            sub={`${todayClasses.filter((c) => c.status === "ongoing").length} live now`}
+          />
+          <StatCard label="Attendance Rate" value={`${attRate}%`} icon="checkmark-done-circle-outline" color="#3B82F6" sub="This week" />
+          <StatCard
+            label="Outstanding Fees"
+            value={outstandingPayments}
+            icon="card-outline"
+            color={outstandingPayments > 0 ? "#EF4444" : "#10B981"}
+            sub={`of ₦${totalContributions.toLocaleString()} total`}
+          />
         </View>
 
         {pendingStudents.length > 0 && (
           <>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Pending Approvals</Text>
-            {pendingStudents.slice(0, 3).map((s) => {
-              const days = Math.floor(
-                (new Date("2026-06-20").getTime() - new Date(s.submittedAt ?? "2026-06-20").getTime()) /
-                  86400000
-              );
-              return (
-                <View key={s.id} style={[styles.pendingCard, { backgroundColor: "#FFF7ED", borderColor: "#FED7AA" }]}>
-                  <View style={styles.pendingLeft}>
-                    <Text style={styles.pendingName}>{s.firstName} {s.surname}</Text>
-                    <Text style={styles.pendingMeta}>{s.matricNumber}  ·  {s.level}</Text>
-                  </View>
-                  <View style={styles.pendingRight}>
-                    <Text style={styles.pendingDays}>{days}d</Text>
-                    <Text style={styles.pendingWaiting}>waiting</Text>
-                  </View>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>⏳ Pending Approvals</Text>
+            {pendingStudents.slice(0, 3).map((s) => (
+              <View key={s.id} style={[styles.pendingCard, { backgroundColor: "#FEF3C7", borderColor: "#FCD34D" }]}>
+                <View style={[styles.pendingAvatar, { backgroundColor: "#F59E0B20" }]}>
+                  <Text style={styles.pendingAvatarText}>{s.firstName[0]}{s.surname[0]}</Text>
                 </View>
-              );
-            })}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.pendingName}>{s.firstName} {s.surname}</Text>
+                  <Text style={styles.pendingMeta}>{s.matricNumber}  ·  {s.level}</Text>
+                </View>
+                <View style={[styles.pendingBadge, { backgroundColor: "#FEF3C7" }]}>
+                  <Ionicons name="time-outline" size={12} color="#B45309" />
+                  <Text style={styles.pendingBadgeText}>Pending</Text>
+                </View>
+              </View>
+            ))}
           </>
         )}
 
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Today's Classes</Text>
-        {todayClasses.map((cls) => (
-          <View key={cls.id} style={[styles.classRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.classDot, { backgroundColor: cls.status === "ongoing" ? colors.success : cls.status === "completed" ? colors.mutedForeground : colors.primary }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.classCode, { color: colors.primary }]}>{cls.courseCode}</Text>
-              <Text style={[styles.className, { color: colors.foreground }]}>{cls.courseName}</Text>
-              <Text style={[styles.classMeta, { color: colors.mutedForeground }]}>{cls.startTime} – {cls.endTime}  ·  {cls.venue}</Text>
-            </View>
-            <View style={styles.classRight}>
-              <Ionicons name="people-outline" size={14} color={colors.mutedForeground} />
-              <Text style={[styles.classCount, { color: colors.mutedForeground }]}>{cls.attendanceCount}</Text>
-            </View>
-          </View>
-        ))}
+        {upcomingEvents.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Upcoming Events</Text>
+            {upcomingEvents.map((ev) => (
+              <View key={ev.id} style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.eventDot, { backgroundColor: ev.category === "big_event" ? colors.accent : colors.info }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.eventTitle, { color: colors.foreground }]}>{ev.title}</Text>
+                  <Text style={[styles.eventMeta, { color: colors.mutedForeground }]}>{ev.date}  ·  {ev.time}  ·  {ev.venue}</Text>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
 
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Announcements</Text>
-        {announcements.slice(0, 2).map((an) => (
+        {announcements.slice(0, 3).map((an) => (
           <View key={an.id} style={[styles.annoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.annoTitle, { color: colors.foreground }]}>{an.title}</Text>
-            <Text style={[styles.annoBody, { color: colors.mutedForeground }]} numberOfLines={1}>{an.body}</Text>
+            <Text style={[styles.annoBody, { color: colors.mutedForeground }]} numberOfLines={2}>{an.body}</Text>
             <Text style={[styles.annoMeta, { color: colors.mutedForeground }]}>{an.postedBy}  ·  {an.time}</Text>
           </View>
         ))}
       </ScrollView>
+
+      <Modal visible={showAnnounce} transparent animationType="slide" onRequestClose={() => setShowAnnounce(false)}>
+        <View style={annStyles.overlay}>
+          <View style={[annStyles.sheet, { backgroundColor: colors.card }]}>
+            <View style={annStyles.header}>
+              <Text style={[annStyles.title, { color: colors.foreground }]}>Post Announcement</Text>
+              <TouchableOpacity onPress={() => setShowAnnounce(false)}>
+                <Ionicons name="close" size={22} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[annStyles.label, { color: colors.mutedForeground }]}>Title *</Text>
+            <TextInput
+              style={[annStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+              placeholder="e.g. Exam Timetable Released"
+              placeholderTextColor={colors.mutedForeground}
+              value={annTitle}
+              onChangeText={setAnnTitle}
+            />
+
+            <Text style={[annStyles.label, { color: colors.mutedForeground }]}>Message *</Text>
+            <TextInput
+              style={[annStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border, minHeight: 90, textAlignVertical: "top" }]}
+              placeholder="Write your announcement here..."
+              placeholderTextColor={colors.mutedForeground}
+              value={annBody}
+              onChangeText={setAnnBody}
+              multiline
+            />
+
+            <Text style={[annStyles.label, { color: colors.mutedForeground }]}>Category</Text>
+            <View style={annStyles.chipRow}>
+              {CATEGORIES.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  style={[annStyles.chip, { backgroundColor: annCategory === c ? colors.primary : colors.muted, borderColor: annCategory === c ? colors.primary : colors.border }]}
+                  onPress={() => setAnnCategory(c)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[annStyles.chipText, { color: annCategory === c ? "#fff" : colors.mutedForeground }]}>{c}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[annStyles.label, { color: colors.mutedForeground }]}>Target Audience</Text>
+            <View style={annStyles.chipRow}>
+              {TARGET_OPTIONS.map((t) => (
+                <TouchableOpacity
+                  key={t}
+                  style={[annStyles.chip, { backgroundColor: annTarget === t ? colors.primary : colors.muted, borderColor: annTarget === t ? colors.primary : colors.border }]}
+                  onPress={() => setAnnTarget(t)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[annStyles.chipText, { color: annTarget === t ? "#fff" : colors.mutedForeground }]}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[annStyles.postBtn, { backgroundColor: posting ? colors.muted : colors.primary }]}
+              onPress={handlePostAnnouncement}
+              activeOpacity={0.85}
+              disabled={posting}
+            >
+              <Ionicons name="send-outline" size={18} color="#fff" />
+              <Text style={annStyles.postBtnText}>{posting ? "Posting..." : "Post to Students"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 24 },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  subRole: { fontSize: 12, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: 1 },
-  name: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff", marginTop: 2 },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
+  greeting: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)" },
+  name: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF", marginTop: 2 },
+  role: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", marginTop: 4 },
   logoutBtn: { padding: 8 },
-  content: { padding: 16 },
-  sectionTitle: { fontSize: 16, fontFamily: "Inter_700Bold", marginTop: 16, marginBottom: 12 },
+  quickActions: { flexDirection: "row", gap: 10 },
+  quickBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 10, borderRadius: 12 },
+  quickBtnText: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  content: { padding: 16, gap: 0 },
+  sectionTitle: { fontSize: 16, fontFamily: "Inter_700Bold", marginTop: 20, marginBottom: 12 },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  pendingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 10,
-  },
-  pendingLeft: { flex: 1 },
-  pendingName: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#92400E" },
-  pendingMeta: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#B45309", marginTop: 2 },
-  pendingRight: { alignItems: "center" },
-  pendingDays: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#F59E0B" },
-  pendingWaiting: { fontSize: 10, fontFamily: "Inter_400Regular", color: "#B45309" },
-  classRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 10,
-  },
-  classDot: { width: 8, height: 8, borderRadius: 4 },
-  classCode: { fontSize: 11, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
-  className: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 1 },
-  classMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
-  classRight: { flexDirection: "row", alignItems: "center", gap: 4 },
-  classCount: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  annoCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 10 },
+  pendingCard: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 8 },
+  pendingAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  pendingAvatarText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#B45309" },
+  pendingName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#92400E" },
+  pendingMeta: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#B45309", marginTop: 1 },
+  pendingBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  pendingBadgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "#B45309" },
+  eventCard: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 8 },
+  eventDot: { width: 10, height: 10, borderRadius: 5 },
+  eventTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  eventMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  annoCard: { borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 8 },
   annoTitle: { fontSize: 14, fontFamily: "Inter_700Bold", marginBottom: 4 },
-  annoBody: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  annoBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   annoMeta: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 6 },
+});
+
+const annStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+  title: { fontSize: 20, fontFamily: "Inter_700Bold" },
+  label: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 6, marginTop: 16 },
+  field: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, fontFamily: "Inter_400Regular" },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
+  chipText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  postBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, paddingVertical: 15, marginTop: 24 },
+  postBtnText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
 });

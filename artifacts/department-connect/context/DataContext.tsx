@@ -66,6 +66,7 @@ export interface Contribution {
   deadline: string;
   paidDate?: string;
   level: string;
+  description?: string;
 }
 
 export interface AppEvent {
@@ -77,6 +78,7 @@ export interface AppEvent {
   venue: string;
   description: string;
   targetAudience?: string;
+  reminderSchedule?: string;
 }
 
 export interface Announcement {
@@ -86,6 +88,7 @@ export interface Announcement {
   postedBy: string;
   time: string;
   category: string;
+  targetAudience?: string;
 }
 
 export interface AuditLog {
@@ -355,6 +358,7 @@ const CONTRIBUTIONS: Contribution[] = [
     deadline: "2026-01-31",
     paidDate: "2026-01-20",
     level: "300L",
+    description: "Mandatory semester dues covering departmental expenses and student welfare.",
   },
   {
     id: "c2",
@@ -363,6 +367,7 @@ const CONTRIBUTIONS: Contribution[] = [
     status: "unpaid",
     deadline: "2026-07-01",
     level: "300L",
+    description: "Contribution towards the annual departmental week celebration, events, and logistics.",
   },
   {
     id: "c3",
@@ -372,6 +377,16 @@ const CONTRIBUTIONS: Contribution[] = [
     deadline: "2026-02-28",
     paidDate: "2026-02-15",
     level: "300L",
+    description: "Funds for printing course materials, lab supplies, and shared academic resources.",
+  },
+  {
+    id: "c4",
+    title: "Exam Clearance Fee",
+    amount: 1500,
+    status: "unpaid",
+    deadline: "2026-06-28",
+    level: "300L",
+    description: "Required fee for examination clearance. Must be paid before exam period begins.",
   },
 ];
 
@@ -385,6 +400,7 @@ const EVENTS: AppEvent[] = [
     venue: "Faculty Building",
     description: "Annual departmental week celebration with games, talks, and exhibitions. All students must attend.",
     targetAudience: "All Students",
+    reminderSchedule: "Both",
   },
   {
     id: "e2",
@@ -395,6 +411,7 @@ const EVENTS: AppEvent[] = [
     venue: "Online (WhatsApp)",
     description: "Level meeting to discuss exam preparations and upcoming events. Link will be shared in the group.",
     targetAudience: "300L",
+    reminderSchedule: "2 hours before",
   },
   {
     id: "e3",
@@ -405,6 +422,7 @@ const EVENTS: AppEvent[] = [
     venue: "Sports Complex",
     description: "Computer Science vs. Physics department. Come out and support our team!",
     targetAudience: "All Students",
+    reminderSchedule: "1 hour before",
   },
 ];
 
@@ -416,6 +434,7 @@ const ANNOUNCEMENTS: Announcement[] = [
     postedBy: "James Adeleke (Dept. Executive)",
     time: "Today",
     category: "Academic",
+    targetAudience: "All Students",
   },
   {
     id: "an2",
@@ -424,6 +443,7 @@ const ANNOUNCEMENTS: Announcement[] = [
     postedBy: "Yusuf Ibrahim (Lecturer)",
     time: "2 days ago",
     category: "Administrative",
+    targetAudience: "All Students",
   },
   {
     id: "an3",
@@ -432,6 +452,7 @@ const ANNOUNCEMENTS: Announcement[] = [
     postedBy: "Sandra Okafor (Course Rep)",
     time: "4 days ago",
     category: "Academic",
+    targetAudience: "300L",
   },
 ];
 
@@ -460,13 +481,22 @@ interface DataContextValue {
   rejectStudent: (id: string, reason: string) => void;
   markAttendance: (classId: string) => void;
   attendedClasses: string[];
+  payContribution: (id: string) => void;
+  addStudent: (student: Omit<StudentRecord, "id">) => void;
+  createEvent: (event: Omit<AppEvent, "id">) => void;
+  createClass: (cls: Omit<ClassSession, "id">) => void;
+  addAnnouncement: (ann: Omit<Announcement, "id">) => void;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [students, setStudents] = useState<StudentRecord[]>(STUDENTS);
+  const [classes, setClasses] = useState<ClassSession[]>(CLASSES);
   const [notifications, setNotifications] = useState<AppNotification[]>(NOTIFICATIONS);
+  const [contributions, setContributions] = useState<Contribution[]>(CONTRIBUTIONS);
+  const [events, setEvents] = useState<AppEvent[]>(EVENTS);
+  const [announcements, setAnnouncements] = useState<Announcement[]>(ANNOUNCEMENTS);
   const [attendedClasses, setAttendedClasses] = useState<string[]>([]);
 
   const markNotificationRead = (id: string) => {
@@ -493,22 +523,79 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setAttendedClasses((prev) => [...prev.filter((c) => c !== classId), classId]);
   };
 
+  const payContribution = (id: string) => {
+    const today = new Date().toISOString().split("T")[0];
+    setContributions((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, status: "paid" as ContributionStatus, paidDate: today } : c
+      )
+    );
+    const paid = contributions.find((c) => c.id === id);
+    if (paid) {
+      const newNotif: AppNotification = {
+        id: `notif_pay_${id}_${Date.now()}`,
+        category: "extras",
+        title: "Payment Successful",
+        body: `Your payment of ₦${paid.amount.toLocaleString()} for "${paid.title}" was received successfully. Receipt saved.`,
+        time: "Just now",
+        isRead: false,
+        priority: "normal",
+      };
+      setNotifications((prev) => [newNotif, ...prev]);
+    }
+  };
+
+  const addStudent = (student: Omit<StudentRecord, "id">) => {
+    const id = `s${Date.now()}`;
+    setStudents((prev) => [...prev, { ...student, id }]);
+  };
+
+  const createEvent = (event: Omit<AppEvent, "id">) => {
+    const id = `e${Date.now()}`;
+    setEvents((prev) => [...prev, { ...event, id }]);
+  };
+
+  const createClass = (cls: Omit<ClassSession, "id">) => {
+    const id = `cl${Date.now()}`;
+    setClasses((prev) => [...prev, { ...cls, id }]);
+  };
+
+  const addAnnouncement = (ann: Omit<Announcement, "id">) => {
+    const id = `an${Date.now()}`;
+    setAnnouncements((prev) => [{ ...ann, id }, ...prev]);
+    const newNotif: AppNotification = {
+      id: `notif_ann_${Date.now()}`,
+      category: "extras",
+      title: ann.title,
+      body: ann.body,
+      time: "Just now",
+      isRead: false,
+      priority: "normal",
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+  };
+
   return (
     <DataContext.Provider
       value={{
         students,
-        classes: CLASSES,
+        classes,
         attendanceS1: ATTENDANCE_S1,
         notifications,
-        contributions: CONTRIBUTIONS,
-        events: EVENTS,
-        announcements: ANNOUNCEMENTS,
+        contributions,
+        events,
+        announcements,
         auditLogs: AUDIT_LOGS,
         markNotificationRead,
         approveStudent,
         rejectStudent,
         markAttendance,
         attendedClasses,
+        payContribution,
+        addStudent,
+        createEvent,
+        createClass,
+        addAnnouncement,
       }}
     >
       {children}

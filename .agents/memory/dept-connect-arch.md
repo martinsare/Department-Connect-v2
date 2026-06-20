@@ -1,6 +1,6 @@
 ---
 name: Department Connect architecture
-description: Key non-obvious decisions for the Department Connect Expo app — routing, auth, and feature flags
+description: Role-based Expo Router app — Student / Admin / Developer — full MVP, all mutations wired, in-memory DataContext, no backend.
 ---
 
 ## Role-based routing
@@ -9,7 +9,7 @@ Three Expo Router groups: `(student)`, `(admin)`, `(developer)`. Each has its ow
 
 The `app/(tabs)/` directory still exists as thin redirect files (avoid deleting — overwrite if needed).
 
-**Why:** Expo Router groups allow separate tab bar layouts per role while sharing the same URL space. Each group IS reachable via explicit navigation even though they share the "/" URL.
+**Why:** Expo Router groups allow separate tab bar layouts per role while sharing the same URL space.
 
 **How to apply:** When adding a new role, create `app/(newrole)/_layout.tsx` with NativeTabs+ClassicTabs, register `(newrole)` in root `app/_layout.tsx` Stack, and add a redirect branch in `app/index.tsx`.
 
@@ -17,20 +17,37 @@ The `app/(tabs)/` directory still exists as thin redirect files (avoid deleting 
 
 Login accepts: Matric Number OR Surname OR StaffId (case-insensitive), plus password. No email auth. Demo password for all accounts: "password". Pending/Rejected students cannot log in (blocked with error message).
 
-**Why:** University department context — matric numbers and surnames are the identifiers students know.
+## DataContext mutations (all implemented as of MVP build)
+- `createEvent(event)` — adds to events[]
+- `addStudent(student)` — adds with Pending status to students[]
+- `createClass(cls)` — adds to classes[]
+- `addAnnouncement(ann)` — adds to announcements[] + fires in-app notification
+- `payContribution(id)` — marks paid + fires success notification
+
+## Student tabs (in order)
+Home, Schedule, Attendance, **Payments**, Inbox (Notifications), Profile
+
+## Payments screen
+Full Paystack-style demo card modal: card number auto-formats, shows processing animation, success animation via react-native Animated API. Navigated to via `router.push("/(student)/payments")` from Pay Now button on Home.
+
+## Admin features
+- Students screen: Add Student button → modal form with matric regex (ART + 7 digits), phone regex (11 digits, 07x/08x/09x), level picker. Creates with Pending status.
+- Events screen: Two tabs — Events / Classes. Create button opens modal with Event or Class Session mode toggle. Both save to DataContext state.
+- Dashboard: "Announce" quick action → modal to post announcement with category + audience targeting. Saves to announcements[] + triggers notification.
+
+## Animations
+- react-native Animated API used throughout (NOT lottie-react-native — not needed)
+- `useNativeDriver` warning on web is expected/harmless — falls back to JS
+- Login: logo scale-in + card slide-up on mount. Demo chips auto-fill on tap.
+- Payments: processing dots, success circle + checkmark spring animation
+
+## Port and CORS
+- Workflow: `PORT=8080`
+- artifact.toml: `localPort=8080`, `router="expo-domain"`
+- app.config.js: `extra.router.origin = https://${REPLIT_DEV_DOMAIN}:8080`
 
 ## QR attendance
-
-expo-camera is NOT installed. QR scanning is simulated via a tap-to-mark button. Real scanning can be added by installing expo-camera when the user provides Supabase keys.
-
-## Paystack
-
-Payment integration is planned (Paystack, not Stripe per user request). Currently demo-only with a "Pay Now" button that does nothing. Wire in when user provides Paystack public/secret keys.
-
-## Data
-
-All data lives in `context/DataContext.tsx` as in-memory arrays. Supabase integration is deferred until user provides API keys. AuthContext uses AsyncStorage for persistence across app restarts.
+expo-camera is NOT installed. Tap-to-mark simulated. Real scanning needs expo-camera + Supabase.
 
 ## Color theme
-
-Primary: #1B4FD8 (navy blue university brand). Gradient: #0D2B7E → #1B4FD8. Accent: #F59E0B (amber/gold). Full light + dark mode in `constants/colors.ts`. Use `useColors()` hook everywhere.
+Primary: #1B4FD8, Gradient: #0D2B7E→#1B4FD8, Accent: #F59E0B. Use `useColors()` hook everywhere.

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
   Platform,
   StyleSheet,
@@ -21,6 +22,25 @@ export default function LoginScreen() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const logoScale = useRef(new Animated.Value(0)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslate = useRef(new Animated.Value(40)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.spring(logoScale, { toValue: 1, useNativeDriver: true, tension: 70, friction: 7 }),
+        Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.spring(cardTranslate, { toValue: 0, useNativeDriver: true, tension: 80, friction: 8 }),
+        Animated.timing(cardOpacity, { toValue: 1, duration: 350, useNativeDriver: true }),
+      ]),
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
     if (!identifier.trim() || !password.trim()) {
@@ -46,13 +66,24 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.hero}>
-          <Image source={require("../assets/images/icon.png")} style={styles.logo} />
+        <Animated.View style={[styles.hero, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}>
+          <View style={styles.logoContainer}>
+            <Image source={require("../assets/images/icon.png")} style={styles.logo} resizeMode="cover" />
+            <View style={styles.logoGlow} />
+          </View>
           <Text style={styles.appName}>Department Connect</Text>
           <Text style={styles.tagline}>Your Academic Community</Text>
-        </View>
+        </Animated.View>
 
-        <View style={styles.card}>
+        <Animated.View
+          style={[
+            styles.card,
+            { opacity: cardOpacity, transform: [{ translateY: cardTranslate }] },
+          ]}
+        >
+          <Text style={styles.cardTitle}>Welcome Back</Text>
+          <Text style={styles.cardSubtitle}>Sign in to access your dashboard</Text>
+
           {!!error && (
             <View style={styles.errorBanner}>
               <Text style={styles.errorText}>{error}</Text>
@@ -60,30 +91,37 @@ export default function LoginScreen() {
           )}
 
           <Text style={styles.formLabel}>Matric Number or Surname</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. ART2500001 or Adeyemi"
-            placeholderTextColor="#94A3B8"
-            value={identifier}
-            onChangeText={setIdentifier}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="next"
-          />
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. ART2500001 or Adeyemi"
+              placeholderTextColor="#94A3B8"
+              value={identifier}
+              onChangeText={setIdentifier}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
+          </View>
 
           <Text style={[styles.formLabel, { marginTop: 16 }]}>Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter password"
-            placeholderTextColor="#94A3B8"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="done"
-            onSubmitEditing={handleLogin}
-          />
+          <View style={[styles.inputWrap, styles.inputRow]}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Enter password"
+              placeholderTextColor="#94A3B8"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
+            />
+            <TouchableOpacity onPress={() => setShowPassword((p) => !p)} style={styles.eyeBtn}>
+              <Text style={styles.eyeIcon}>{showPassword ? "🙈" : "👁"}</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             style={[styles.btn, isLoading && styles.btnDisabled]}
@@ -101,21 +139,30 @@ export default function LoginScreen() {
           <View style={styles.demo}>
             <Text style={styles.demoTitle}>Demo Credentials  (password: "password")</Text>
             <View style={styles.demoRow}>
-              <View style={styles.demoChip}>
-                <Text style={styles.demoChipLabel}>Student</Text>
-                <Text style={styles.demoChipValue}>Adeyemi</Text>
-              </View>
-              <View style={styles.demoChip}>
-                <Text style={styles.demoChipLabel}>Admin</Text>
-                <Text style={styles.demoChipValue}>Ibrahim</Text>
-              </View>
-              <View style={styles.demoChip}>
-                <Text style={styles.demoChipLabel}>Developer</Text>
-                <Text style={styles.demoChipValue}>Martins</Text>
-              </View>
+              {[
+                { role: "Student", hint: "Adeyemi", icon: "🎓" },
+                { role: "Admin", hint: "Ibrahim", icon: "🛡️" },
+                { role: "Dev", hint: "Martins", icon: "💻" },
+              ].map((d) => (
+                <TouchableOpacity
+                  key={d.role}
+                  style={styles.demoChip}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setIdentifier(d.hint);
+                    setPassword("password");
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Text style={styles.demoChipIcon}>{d.icon}</Text>
+                  <Text style={styles.demoChipLabel}>{d.role}</Text>
+                  <Text style={styles.demoChipValue}>{d.hint}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
+            <Text style={styles.demoHint}>Tap any chip to auto-fill</Text>
           </View>
-        </View>
+        </Animated.View>
       </KeyboardAwareScrollViewCompat>
     </LinearGradient>
   );
@@ -124,8 +171,26 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: 24 },
-  hero: { alignItems: "center", marginBottom: 40 },
-  logo: { width: 80, height: 80, borderRadius: 20, marginBottom: 16 },
+  hero: { alignItems: "center", marginBottom: 36 },
+  logoContainer: { position: "relative", marginBottom: 16 },
+  logo: {
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.3)",
+  },
+  logoGlow: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    right: 8,
+    bottom: 0,
+    borderRadius: 20,
+    backgroundColor: "#3B82F6",
+    opacity: 0.3,
+    zIndex: -1,
+  },
   appName: {
     fontSize: 28,
     fontFamily: "Inter_700Bold",
@@ -148,6 +213,8 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
   },
+  cardTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#0F172A", marginBottom: 4 },
+  cardSubtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B", marginBottom: 20 },
   errorBanner: {
     backgroundColor: "#FEE2E2",
     borderRadius: 10,
@@ -156,6 +223,8 @@ const styles = StyleSheet.create({
   },
   errorText: { color: "#DC2626", fontSize: 14, fontFamily: "Inter_400Regular" },
   formLabel: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#374151", marginBottom: 8 },
+  inputWrap: { borderRadius: 12, overflow: "hidden" },
+  inputRow: { flexDirection: "row", alignItems: "center" },
   input: {
     backgroundColor: "#F8FAFC",
     borderWidth: 1.5,
@@ -167,6 +236,8 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     color: "#0F172A",
   },
+  eyeBtn: { position: "absolute", right: 12, padding: 4 },
+  eyeIcon: { fontSize: 16 },
   btn: {
     backgroundColor: "#1B4FD8",
     borderRadius: 14,
@@ -182,10 +253,16 @@ const styles = StyleSheet.create({
   demoChip: {
     flex: 1,
     backgroundColor: "#F0F4FF",
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    gap: 2,
   },
-  demoChipLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: "#64748B", marginBottom: 2 },
-  demoChipValue: { fontSize: 13, fontFamily: "Inter_700Bold", color: "#1B4FD8" },
+  demoChipIcon: { fontSize: 18 },
+  demoChipLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: "#64748B" },
+  demoChipValue: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#1B4FD8" },
+  demoHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#CBD5E1", textAlign: "center", marginTop: 8 },
 });

@@ -24,6 +24,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "checkmark.circle", selected: "checkmark.circle.fill" }} />
         <Label>Attendance</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="payments">
+        <Icon sf={{ default: "creditcard", selected: "creditcard.fill" }} />
+        <Label>Payments</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="notifications">
         <Icon sf={{ default: "bell", selected: "bell.fill" }} />
         <Label>Inbox</Label>
@@ -99,6 +103,18 @@ function ClassicTabLayout() {
               <SymbolView name={focused ? "checkmark.circle.fill" : "checkmark.circle"} tintColor={color} size={22} />
             ) : (
               <Ionicons name={focused ? "checkmark-circle" : "checkmark-circle-outline"} size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="payments"
+        options={{
+          title: "Payments",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name={focused ? "creditcard.fill" : "creditcard"} tintColor={color} size={22} />
+            ) : (
+              <Ionicons name={focused ? "card" : "card-outline"} size={22} color={color} />
             ),
         }}
       />

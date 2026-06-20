@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import {
+  Alert,
   FlatList,
+  Modal,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,10 +14,12 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useData, type StudentStatus } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
 const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L"];
+const LEVEL_OPTIONS = ["100L", "200L", "300L", "400L", "500L"];
 
 const STATUS_COLORS: Record<StudentStatus, string> = {
   active: "#10B981",
@@ -23,12 +28,35 @@ const STATUS_COLORS: Record<StudentStatus, string> = {
   suspended: "#6B7280",
 };
 
+const MATRIC_REGEX = /^[A-Z]{3}[0-9]{7}$/;
+const PHONE_REGEX = /^0[7-9][0-9]{9}$/;
+
+type FormErrors = {
+  firstName?: string;
+  surname?: string;
+  matricNumber?: string;
+  dob?: string;
+  phone?: string;
+  level?: string;
+};
+
 export default function StudentsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { students } = useData();
+  const { students, addStudent } = useData();
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("All");
+  const [showAdd, setShowAdd] = useState(false);
+
+  const [firstName, setFirstName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [matricNumber, setMatricNumber] = useState("");
+  const [dob, setDob] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [level, setLevel] = useState("300L");
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const filtered = students.filter((s) => {
     const matchSearch =
@@ -42,6 +70,68 @@ export default function StudentsScreen() {
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
+  const resetForm = () => {
+    setFirstName("");
+    setSurname("");
+    setMatricNumber("");
+    setDob("");
+    setPhone("");
+    setEmail("");
+    setLevel("300L");
+    setFormErrors({});
+    setSubmitting(false);
+  };
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    if (!firstName.trim()) errors.firstName = "First name is required";
+    if (!surname.trim()) errors.surname = "Surname is required";
+    if (!MATRIC_REGEX.test(matricNumber.toUpperCase()))
+      errors.matricNumber = "Format: ART2500001 (3 letters + 7 digits)";
+    if (!dob.match(/^\d{4}-\d{2}-\d{2}$/))
+      errors.dob = "Format: YYYY-MM-DD (e.g. 2002-05-15)";
+    if (!PHONE_REGEX.test(phone))
+      errors.phone = "Must be 11 digits starting with 070/080/081/090/091";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleAdd = async () => {
+    if (!validateForm()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    setSubmitting(true);
+    await new Promise((r) => setTimeout(r, 600));
+    const existing = students.find(
+      (s) => s.matricNumber.toUpperCase() === matricNumber.toUpperCase()
+    );
+    if (existing) {
+      setFormErrors({ matricNumber: "This matric number is already registered" });
+      setSubmitting(false);
+      return;
+    }
+    addStudent({
+      firstName: firstName.trim(),
+      surname: surname.trim(),
+      matricNumber: matricNumber.toUpperCase(),
+      level,
+      department: "Computer Science",
+      phone: phone.trim(),
+      email: email.trim(),
+      dob,
+      status: "pending",
+      submittedAt: new Date().toISOString().split("T")[0],
+    });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowAdd(false);
+    resetForm();
+    Alert.alert(
+      "Student Added",
+      `${firstName} ${surname} has been registered with Pending Approval status.`
+    );
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
@@ -53,6 +143,17 @@ export default function StudentsScreen() {
             <Text style={styles.title}>Students</Text>
             <Text style={styles.subtitle}>{students.length} total enrolled</Text>
           </View>
+          <TouchableOpacity
+            style={styles.addBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowAdd(true);
+            }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="person-add-outline" size={18} color="#1B4FD8" />
+            <Text style={styles.addBtnText}>Add</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.searchBar}>
@@ -124,7 +225,7 @@ export default function StudentsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.studentName, { color: colors.foreground }]}>{s.firstName} {s.surname}</Text>
-                <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>{s.matricNumber}</Text>
+                <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>{s.matricNumber}  ·  {s.dob}</Text>
                 <View style={styles.studentBottom}>
                   <Text style={[styles.studentLevel, { color: colors.primary }]}>{s.level}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: statusColor + "20" }]}>
@@ -138,6 +239,139 @@ export default function StudentsScreen() {
           );
         }}
       />
+
+      <Modal visible={showAdd} transparent animationType="slide" onRequestClose={() => { setShowAdd(false); resetForm(); }}>
+        <View style={addStyles.overlay}>
+          <View style={[addStyles.sheet, { backgroundColor: colors.card }]}>
+            <View style={addStyles.header}>
+              <Text style={[addStyles.title, { color: colors.foreground }]}>Add New Student</Text>
+              <TouchableOpacity onPress={() => { setShowAdd(false); resetForm(); }}>
+                <Ionicons name="close" size={22} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={addStyles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[addStyles.label, { color: colors.mutedForeground }]}>First Name *</Text>
+                  <TextInput
+                    style={[addStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: formErrors.firstName ? "#EF4444" : colors.border }]}
+                    placeholder="e.g. Tolu"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    autoCapitalize="words"
+                  />
+                  {formErrors.firstName ? <Text style={addStyles.error}>{formErrors.firstName}</Text> : null}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[addStyles.label, { color: colors.mutedForeground }]}>Surname *</Text>
+                  <TextInput
+                    style={[addStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: formErrors.surname ? "#EF4444" : colors.border }]}
+                    placeholder="e.g. Adeyemi"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={surname}
+                    onChangeText={setSurname}
+                    autoCapitalize="words"
+                  />
+                  {formErrors.surname ? <Text style={addStyles.error}>{formErrors.surname}</Text> : null}
+                </View>
+              </View>
+
+              <Text style={[addStyles.label, { color: colors.mutedForeground }]}>Matric Number * <Text style={addStyles.hint}>(e.g. ART2500001)</Text></Text>
+              <TextInput
+                style={[addStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: formErrors.matricNumber ? "#EF4444" : colors.border }]}
+                placeholder="ART2500001"
+                placeholderTextColor={colors.mutedForeground}
+                value={matricNumber}
+                onChangeText={(v) => setMatricNumber(v.toUpperCase())}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={10}
+              />
+              {formErrors.matricNumber ? <Text style={addStyles.error}>{formErrors.matricNumber}</Text> : null}
+
+              <Text style={[addStyles.label, { color: colors.mutedForeground }]}>Date of Birth * <Text style={addStyles.hint}>(YYYY-MM-DD)</Text></Text>
+              <TextInput
+                style={[addStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: formErrors.dob ? "#EF4444" : colors.border }]}
+                placeholder="e.g. 2002-05-15"
+                placeholderTextColor={colors.mutedForeground}
+                value={dob}
+                onChangeText={setDob}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+              {formErrors.dob ? <Text style={addStyles.error}>{formErrors.dob}</Text> : null}
+
+              <Text style={[addStyles.label, { color: colors.mutedForeground }]}>Phone Number * <Text style={addStyles.hint}>(080XXXXXXXX)</Text></Text>
+              <TextInput
+                style={[addStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: formErrors.phone ? "#EF4444" : colors.border }]}
+                placeholder="08012345678"
+                placeholderTextColor={colors.mutedForeground}
+                value={phone}
+                onChangeText={(v) => setPhone(v.replace(/\D/g, "").slice(0, 11))}
+                keyboardType="phone-pad"
+                maxLength={11}
+              />
+              {formErrors.phone ? <Text style={addStyles.error}>{formErrors.phone}</Text> : null}
+
+              <Text style={[addStyles.label, { color: colors.mutedForeground }]}>Email <Text style={addStyles.hint}>(optional — recovery only)</Text></Text>
+              <TextInput
+                style={[addStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="student@example.com"
+                placeholderTextColor={colors.mutedForeground}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={[addStyles.label, { color: colors.mutedForeground }]}>Level *</Text>
+              <View style={addStyles.levelRow}>
+                {LEVEL_OPTIONS.map((l) => (
+                  <TouchableOpacity
+                    key={l}
+                    style={[
+                      addStyles.levelChip,
+                      {
+                        backgroundColor: level === l ? colors.primary : colors.muted,
+                        borderColor: level === l ? colors.primary : colors.border,
+                      },
+                    ]}
+                    onPress={() => setLevel(l)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[addStyles.levelChipText, { color: level === l ? "#fff" : colors.mutedForeground }]}>{l}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={[addStyles.statusNote, { backgroundColor: "#FEF3C7" }]}>
+                <Ionicons name="information-circle-outline" size={16} color="#B45309" />
+                <Text style={addStyles.statusNoteText}>
+                  Account will be created with <Text style={{ fontFamily: "Inter_700Bold" }}>Pending Approval</Text> status. A Lecturer or Course Rep must approve before the student can log in.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[addStyles.submitBtn, { backgroundColor: submitting ? colors.muted : colors.primary }]}
+                onPress={handleAdd}
+                activeOpacity={0.85}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <Text style={addStyles.submitText}>Creating Account...</Text>
+                ) : (
+                  <>
+                    <Ionicons name="person-add-outline" size={18} color="#fff" />
+                    <Text style={addStyles.submitText}>Create Student Account</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -147,42 +381,25 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   title: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#fff" },
   subtitle: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.65)", marginTop: 2 },
+  addBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8,
+  },
+  addBtnText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#1B4FD8" },
   searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+    flexDirection: "row", alignItems: "center", backgroundColor: "#fff",
+    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, gap: 10,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    color: "#0F172A",
-  },
-  levelRow: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  levelChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
+  searchInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular", color: "#0F172A" },
+  levelRow: { paddingVertical: 12, borderBottomWidth: 1 },
+  levelChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
   levelChipText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   list: { padding: 16, gap: 10 },
   empty: { alignItems: "center", paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular" },
   studentCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
+    flexDirection: "row", alignItems: "center", gap: 12,
+    borderRadius: 16, borderWidth: 1, padding: 14,
   },
   avatar: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 16, fontFamily: "Inter_700Bold" },
@@ -193,4 +410,23 @@ const styles = StyleSheet.create({
   statusBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "capitalize" },
+});
+
+const addStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40, maxHeight: "92%" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  title: { fontSize: 20, fontFamily: "Inter_700Bold" },
+  row: { flexDirection: "row", gap: 12 },
+  label: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 6, marginTop: 16 },
+  hint: { fontFamily: "Inter_400Regular", fontSize: 11 },
+  field: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, fontFamily: "Inter_400Regular" },
+  error: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#EF4444", marginTop: 4 },
+  levelRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  levelChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  levelChipText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  statusNote: { flexDirection: "row", alignItems: "flex-start", gap: 8, borderRadius: 12, padding: 12, marginTop: 20 },
+  statusNoteText: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", color: "#92400E", lineHeight: 17 },
+  submitBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, paddingVertical: 16, marginTop: 20 },
+  submitText: { color: "#fff", fontSize: 15, fontFamily: "Inter_700Bold" },
 });

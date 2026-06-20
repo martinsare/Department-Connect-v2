@@ -13,6 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
@@ -206,7 +207,10 @@ export default function StudentHome() {
                   <Text style={styles.duesAmount}>₦{c.amount.toLocaleString()}</Text>
                   <TouchableOpacity
                     style={styles.payBtn}
-                    onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.push("/(student)/payments");
+                    }}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.payBtnText}>Pay Now</Text>
