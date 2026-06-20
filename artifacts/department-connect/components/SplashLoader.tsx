@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   circle: {
-    backgroundColor: "#F5F3FF",
+    backgroundColor: "#7C3AED",
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
