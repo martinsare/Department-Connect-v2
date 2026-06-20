@@ -1,6 +1,6 @@
-# [Project name]
+# Department Connect
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A university department management mobile app for Nigerian higher-education departments. Three-tier role system (Student < Admin < Developer) with class scheduling, QR attendance, contributions/payments, categorised notifications, approval workflows, and analytics.
 
 ## Run & Operate
 
@@ -14,31 +14,60 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Mobile: Expo (SDK 54) + Expo Router v6, React Native 0.81
+- Auth: custom demo auth with AsyncStorage (Supabase integration pending)
+- DB: PostgreSQL + Drizzle ORM (API server)
+- Payments: Paystack (planned — demo mode currently)
+- Notifications: 4 categories (Lectures, Big Events, Small Events, Extras)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/department-connect/` — Expo mobile app
+  - `app/` — Expo Router screens (role-based groups)
+  - `app/(student)/` — 5 student screens: home, schedule, attendance, notifications, profile
+  - `app/(admin)/` — 5 admin screens: dashboard, students, approvals, events, analytics
+  - `app/(developer)/` — 4 developer screens: dashboard, users, logs, config
+  - `context/AuthContext.tsx` — auth state + demo users + AsyncStorage
+  - `context/DataContext.tsx` — demo data (students, classes, notifications, etc.)
+  - `constants/colors.ts` — navy blue university theme (light + dark)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Role-based Expo Router groups `(student)`, `(admin)`, `(developer)` — each has its own tab bar layout. `app/index.tsx` redirects to the correct group on login.
+- Login accepts **Matric Number OR Surname** (case-insensitive), plus password. No email auth.
+- All demo passwords are "password" for simplicity; real Supabase auth to be wired in later.
+- QR attendance is simulated (tap-to-mark) in demo mode — expo-camera not installed. Will wire in barcode scanning when user provides Supabase keys.
+- Paystack integration pending user API keys.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+**Student view:** Dashboard with greeting + stats, today's classes with live QR attendance, animated attendance bars per course, categorised notification inbox (All/Lectures/Big Events/Small Events/Extras), full weekly schedule, profile editor with birthday privacy toggle.
+
+**Admin view:** Dashboard stats, pending approvals queue (approve/reject with reason), searchable student list with level/status filters, event creation modal, attendance + contribution analytics.
+
+**Developer view:** System health dashboard, all-user list with role filter, audit log stream, feature-flag config panel.
+
+## Demo Credentials (all passwords: "password")
+
+| Role | Identifier |
+|------|-----------|
+| Student | Adeyemi (or ART2500001) |
+| Admin | Ibrahim |
+| Developer | Martins |
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- User is: Martins (the developer persona in the app)
+- Auth by Matric Number or Surname — NOT email
+- Demo data first; Supabase API keys to be provided later
+- Paystack for payments (keys TBD)
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Do NOT use expo-camera (not in package.json). QR scanning is simulated in demo mode.
+- The `(tabs)` group still exists as dead code (redirect files). Do not delete — overwrite with redirect logic if needed.
+- When adding new screens to a role group, add them to both the NativeTabs and ClassicTabs sections in that group's `_layout.tsx`.
+- Navigate to role groups with full path: `router.replace('/(student)/')` etc.
 
 ## Pointers
 

@@ -1,0 +1,1 @@
+- [Department Connect architecture](dept-connect-arch.md) — role-based Expo Router groups, login by matric/surname, demo-first then Supabase
