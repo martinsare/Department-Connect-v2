@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   Modal,
   Platform,
   ScrollView,
@@ -10,18 +11,23 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Svg, { Path, Ellipse } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { useData } from "@/context/DataContext";
 import { addRegisteredStudent } from "@/context/registeredStudentsStore";
+
 import {
   addRegisteredTeacher,
   registeredTeachersStore,
 } from "@/context/registeredTeachersStore";
 import { SuccessAnimation } from "@/components/AnimatedStatus";
+
+const { width: W } = Dimensions.get("window");
 
 const LEVELS = ["100L", "200L", "300L", "400L", "500L"];
 const DEPARTMENTS = [
@@ -84,7 +90,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<DoneType | null>(null);
 
-  const topPad = insets.top + (Platform.OS === "web" ? 67 : 24);
+  const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const botPad = insets.bottom + 24;
 
   const switchRole = (r: Role) => {
@@ -192,7 +198,7 @@ export default function RegisterScreen() {
     return (
       <LinearGradient
         colors={["#0D0720", "#2D1B69", "#4C1D95"]}
-        style={[styles.gradient, { alignItems: "center", justifyContent: "center", padding: 24 }]}
+        style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}
       >
         <View style={styles.successCard}>
           <SuccessAnimation />
@@ -226,62 +232,50 @@ export default function RegisterScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <LinearGradient colors={["#0D0720", "#2D1B69", "#4C1D95"]} style={[styles.purpleZone, { paddingTop: topPad }]}>
-        {/* Back */}
+    <View style={[styles.root, { paddingTop: topPad }]}>
+      {/* Wave header */}
+      <View style={styles.waveContainer}>
+        <Svg width={W} height={190} viewBox={`0 0 ${W} 190`} style={StyleSheet.absoluteFill}>
+          <Path d={`M0,0 L${W},0 L${W},125 Q${W*0.75},178 ${W*0.5},142 Q${W*0.25},106 0,155 Z`} fill="#2D1B69" />
+          <Path d={`M0,0 L${W},0 L${W},105 Q${W*0.75},153 ${W*0.5},120 Q${W*0.25},87 0,132 Z`} fill="#7C3AED" opacity={0.5} />
+          <Ellipse cx={W*0.87} cy={28} rx={55} ry={48} fill="#9F67FF" opacity={0.18} />
+          <Ellipse cx={W*0.1} cy={14} rx={42} ry={37} fill="#6D28D9" opacity={0.22} />
+        </Svg>
+
         <TouchableOpacity style={styles.backLink} onPress={() => router.back()} activeOpacity={0.7}>
-          <Ionicons name="arrow-back" size={18} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.backLinkText}>Back to Login</Text>
+          <View style={styles.backCircle}>
+            <Ionicons name="arrow-back" size={18} color="#fff" />
+          </View>
         </TouchableOpacity>
 
-        {/* Hero */}
-        <View style={styles.hero}>
-          <View style={styles.heroIcon}>
-            <Ionicons name="person-add-outline" size={36} color="#fff" />
+        <View style={styles.waveHero}>
+          <View style={styles.heroIconOuter}>
+            <View style={styles.heroIconInner}>
+              <Ionicons name="person-add-outline" size={26} color="#7C3AED" />
+            </View>
           </View>
           <Text style={styles.heroTitle}>Create Account</Text>
           <Text style={styles.heroSub}>Fill in your details to request access</Text>
         </View>
+      </View>
 
-        {/* Role toggle */}
-        <View style={styles.roleSwitcher}>
-          <TouchableOpacity
-            style={[styles.roleTab, role === "student" && styles.roleTabActive]}
-            onPress={() => switchRole("student")}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name={role === "student" ? "school" : "school-outline"}
-              size={16}
-              color={role === "student" ? "#fff" : "rgba(255,255,255,0.5)"}
-            />
-            <Text style={[styles.roleTabText, role === "student" && styles.roleTabTextActive]}>
-              Student
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.roleTab, role === "teacher" && styles.roleTabActive]}
-            onPress={() => switchRole("teacher")}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name={role === "teacher" ? "person-circle" : "person-circle-outline"}
-              size={16}
-              color={role === "teacher" ? "#fff" : "rgba(255,255,255,0.5)"}
-            />
-            <Text style={[styles.roleTabText, role === "teacher" && styles.roleTabTextActive]}>
-              Admin
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+      {/* Role toggle */}
+      <View style={styles.roleSwitcher}>
+        <TouchableOpacity style={[styles.roleTab, role === "student" && styles.roleTabActive]} onPress={() => switchRole("student")} activeOpacity={0.8}>
+          <Ionicons name={role === "student" ? "school" : "school-outline"} size={15} color={role === "student" ? "#fff" : "#7C3AED"} />
+          <Text style={[styles.roleTabText, role === "student" && styles.roleTabTextActive]}>Student</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.roleTab, role === "teacher" && styles.roleTabActive]} onPress={() => switchRole("teacher")} activeOpacity={0.8}>
+          <Ionicons name={role === "teacher" ? "person-circle" : "person-circle-outline"} size={15} color={role === "teacher" ? "#fff" : "#7C3AED"} />
+          <Text style={[styles.roleTabText, role === "teacher" && styles.roleTabTextActive]}>Admin</Text>
+        </TouchableOpacity>
+      </View>
 
-      <View style={styles.whitePanel}>
-        <ScrollView
-          contentContainerStyle={[styles.panelScroll, { paddingBottom: botPad }]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+      <ScrollView
+        contentContainerStyle={[styles.formScroll, { paddingBottom: botPad }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* ── Student form ── */}
         {role === "student" && (
           <View>
@@ -690,58 +684,51 @@ export default function RegisterScreen() {
             </Text>
           </View>
         )}
-        </ScrollView>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
-  root: { flex: 1, backgroundColor: "#fff" },
-  purpleZone: {
-    paddingHorizontal: 20,
-    paddingBottom: 28,
+  root: { flex: 1, backgroundColor: "#FAFAFA" },
+
+  waveContainer: { width: "100%", height: 190 },
+  backLink: { position: "absolute", top: 16, left: 20 },
+  backCircle: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.35)",
+    alignItems: "center", justifyContent: "center",
   },
-  whitePanel: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    marginTop: -28,
-    overflow: "hidden",
-  },
-  panelScroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 24 },
-  backLink: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    marginBottom: 18, alignSelf: "flex-start",
-  },
-  backLinkText: { color: "rgba(255,255,255,0.8)", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  hero: { alignItems: "center", marginBottom: 16 },
-  heroIcon: {
+  waveHero: { alignItems: "center", marginTop: 42 },
+  heroIconOuter: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
-    alignItems: "center", justifyContent: "center", marginBottom: 14,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.45)",
+    alignItems: "center", justifyContent: "center", marginBottom: 10,
   },
-  heroTitle: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#fff", marginBottom: 4 },
-  heroSub: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.65)" },
+  heroIconInner: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: "#fff",
+    alignItems: "center", justifyContent: "center",
+  },
+  heroTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff", marginBottom: 3 },
+  heroSub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)" },
+
   roleSwitcher: {
-    flexDirection: "row", gap: 8, marginBottom: 20,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: 16, padding: 4,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
+    flexDirection: "row", marginHorizontal: 20, marginTop: 16, marginBottom: 8,
+    backgroundColor: "#F0EBFF", borderRadius: 14, padding: 4,
+    borderWidth: 1, borderColor: "#DDD6FE",
   },
   roleTab: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 7, paddingVertical: 11, borderRadius: 12,
+    gap: 6, paddingVertical: 10, borderRadius: 10,
   },
   roleTabActive: { backgroundColor: "#7C3AED" },
-  roleTabText: {
-    fontSize: 14, fontFamily: "Inter_600SemiBold",
-    color: "rgba(255,255,255,0.5)",
-  },
+  roleTabText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
   roleTabTextActive: { color: "#fff" },
+
+  formScroll: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 8 },
   errorBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,
     backgroundColor: "#FEE2E2", borderRadius: 10, padding: 12, marginBottom: 16,
