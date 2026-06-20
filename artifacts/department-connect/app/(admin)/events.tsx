@@ -54,7 +54,7 @@ export default function EventsScreen() {
   const [classDate, setClassDate] = useState("");
   const [classStart, setClassStart] = useState("");
   const [classEnd, setClassEnd] = useState("");
-  const [classVenue, setClassVenue] = useState("LT1");
+  const [classVenue, setClassVenue] = useState("");
   const [classLevel, setClassLevel] = useState("300L");
 
   const [activeTab, setActiveTab] = useState<"events" | "classes">("events");
@@ -68,7 +68,7 @@ export default function EventsScreen() {
     setNewDescription(""); setNewTarget("All Students"); setNewReminder("Both");
     setNewCat("big_event");
     setCourseCode(""); setCourseName(""); setClassDate(""); setClassStart("");
-    setClassEnd(""); setClassVenue("LT1"); setClassLevel("300L");
+    setClassEnd(""); setClassVenue(""); setClassLevel("300L");
   };
 
   const handleCreateEvent = () => {
@@ -475,18 +475,13 @@ export default function EventsScreen() {
                   </View>
 
                   <Text style={[modalStyles.label, { color: colors.mutedForeground }]}>Venue</Text>
-                  <View style={modalStyles.catRow}>
-                    {VENUE_OPTIONS.map((v) => (
-                      <TouchableOpacity
-                        key={v}
-                        style={[modalStyles.catChoice, { backgroundColor: classVenue === v ? colors.primary : colors.muted, borderColor: classVenue === v ? colors.primary : colors.border }]}
-                        onPress={() => setClassVenue(v)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={[modalStyles.catChoiceText, { color: classVenue === v ? "#fff" : colors.mutedForeground }]}>{v}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
+                  <TextInput
+                    style={[modalStyles.field, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+                    placeholder="e.g. LT1, Lab 2, Online (Zoom)…"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={classVenue}
+                    onChangeText={setClassVenue}
+                  />
 
                   <TouchableOpacity
                     style={[modalStyles.submitBtn, { backgroundColor: "#7C3AED" }]}

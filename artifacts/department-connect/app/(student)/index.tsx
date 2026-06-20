@@ -74,9 +74,10 @@ export default function StudentHome() {
             style={styles.bellBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/(student)/notifications");
+              router.push("/notifications" as any);
             }}
             activeOpacity={0.8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="notifications-outline" size={22} color="#fff" />
             {notifications.filter((n) => !n.isRead).length > 0 && (

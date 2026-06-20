@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, logout, allUsers } = useAuth();
+  const router = useRouter();
   const { students, classes, announcements, contributions, events, addAnnouncement, attendanceS1, attendanceS2 } = useData();
   const [showAnnounce, setShowAnnounce] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -146,9 +147,21 @@ export default function AdminDashboard() {
             <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
             <Text style={styles.role}>{user?.subRole ?? "Admin"}  ·  {user?.department}</Text>
           </View>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={20} color="rgba(255,255,255,0.8)" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push("/notifications" as any);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="notifications-outline" size={20} color="rgba(255,255,255,0.9)" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+              <Ionicons name="log-out-outline" size={20} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.quickActions}>
@@ -492,6 +505,12 @@ const styles = StyleSheet.create({
   name: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF", marginTop: 2 },
   role: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", marginTop: 4 },
   logoutBtn: { padding: 8 },
+  bellBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+  },
   quickActions: { flexDirection: "row", gap: 10 },
   quickBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 10, borderRadius: 12 },
   quickBtnText: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },

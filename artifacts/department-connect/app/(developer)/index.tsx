@@ -4,6 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -12,6 +14,7 @@ export default function DeveloperDashboard() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const { students, classes, auditLogs } = useData();
+  const router = useRouter();
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
@@ -44,17 +47,29 @@ export default function DeveloperDashboard() {
             <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
             <Text style={styles.id}>{user?.staffId}</Text>
           </View>
-          <TouchableOpacity
-            onPress={() =>
-              Alert.alert("Sign Out", "Are you sure?", [
-                { text: "Cancel", style: "cancel" },
-                { text: "Sign Out", style: "destructive", onPress: logout },
-              ])
-            }
-            style={styles.logoutBtn}
-          >
-            <Ionicons name="log-out-outline" size={20} color="rgba(255,255,255,0.6)" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push("/notifications" as any);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="notifications-outline" size={20} color="rgba(255,255,255,0.85)" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert("Sign Out", "Are you sure?", [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Sign Out", style: "destructive", onPress: logout },
+                ])
+              }
+              style={styles.logoutBtn}
+            >
+              <Ionicons name="log-out-outline" size={20} color="rgba(255,255,255,0.6)" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.metricGrid}>
@@ -114,6 +129,12 @@ const styles = StyleSheet.create({
   name: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff" },
   id: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)", marginTop: 2 },
   logoutBtn: { padding: 8 },
+  bellBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.18)",
+  },
   metricGrid: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.08)",

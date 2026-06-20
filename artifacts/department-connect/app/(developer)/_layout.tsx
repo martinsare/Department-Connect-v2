@@ -110,6 +110,7 @@ function ClassicTabLayout() {
             ),
         }}
       />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }
