@@ -51,6 +51,9 @@ module.exports = {
       reactCompiler: true,
     },
     extra: {
+      eas: {
+        projectId: "7144aec8-28b2-4af8-8320-643b6425b7bd",
+      },
       router: {
         origin: replitDomain ? `https://${replitDomain}:8080` : undefined,
         headOrigin: replitDomain ? `https://${replitDomain}:8080` : undefined,
