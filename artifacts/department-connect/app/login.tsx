@@ -32,12 +32,12 @@ export default function LoginScreen() {
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
-        Animated.spring(logoScale, { toValue: 1, useNativeDriver: true, tension: 70, friction: 7 }),
-        Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.spring(logoScale, { toValue: 1, useNativeDriver: false, tension: 70, friction: 7 }),
+        Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: false }),
       ]),
       Animated.parallel([
-        Animated.spring(cardTranslate, { toValue: 0, useNativeDriver: true, tension: 80, friction: 8 }),
-        Animated.timing(cardOpacity, { toValue: 1, duration: 350, useNativeDriver: true }),
+        Animated.spring(cardTranslate, { toValue: 0, useNativeDriver: false, tension: 80, friction: 8 }),
+        Animated.timing(cardOpacity, { toValue: 1, duration: 350, useNativeDriver: false }),
       ]),
     ]).start();
   }, []);
@@ -207,10 +207,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
+    boxShadow: "0px 12px 24px rgba(0,0,0,0.25)",
     elevation: 12,
   },
   cardTitle: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#0F172A", marginBottom: 4 },

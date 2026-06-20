@@ -30,10 +30,10 @@ function SuccessAnimation({ visible }: { visible: boolean }) {
     if (visible) {
       Animated.sequence([
         Animated.parallel([
-          Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 80, friction: 6 }),
-          Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+          Animated.spring(scale, { toValue: 1, useNativeDriver: false, tension: 80, friction: 6 }),
+          Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: false }),
         ]),
-        Animated.spring(checkScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 5 }),
+        Animated.spring(checkScale, { toValue: 1, useNativeDriver: false, tension: 100, friction: 5 }),
       ]).start();
     } else {
       scale.setValue(0);
@@ -66,10 +66,7 @@ const successStyles = StyleSheet.create({
     backgroundColor: "#10B981",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#10B981",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
+    boxShadow: "0px 8px 16px rgba(16,185,129,0.4)",
     elevation: 10,
   },
   title: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#0F172A" },
@@ -97,8 +94,8 @@ function PaymentModal({
     if (step === "processing") {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(dotAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-          Animated.timing(dotAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+          Animated.timing(dotAnim, { toValue: 1, duration: 600, useNativeDriver: false }),
+          Animated.timing(dotAnim, { toValue: 0, duration: 600, useNativeDriver: false }),
         ])
       ).start();
       setTimeout(() => {
