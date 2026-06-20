@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   FlatList,
   Platform,
@@ -13,31 +13,46 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useData } from "@/context/DataContext";
+import type { AdminNotification } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
-type AdminNotif = {
-  id: string;
+type AdminNotif = AdminNotification & {
   icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  title: string;
-  body: string;
-  time: string;
-  isRead: boolean;
 };
 
 export default function AdminNotificationsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { students, classes, contributions, announcements } = useData();
+  const {
+    adminNotifications,
+    markAdminNotificationRead,
+    students,
+    classes,
+    contributions,
+    announcements,
+  } = useData();
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   const pending = students.filter((s) => s.status === "pending");
   const todayClasses = classes.filter((c) => c.date === "2026-06-20");
   const unpaidContributions = contributions.filter((c) => c.status === "unpaid");
+  const pendingPayments = contributions.filter((c) => c.status === "pending");
 
   const derived: AdminNotif[] = [
+    ...(pendingPayments.length > 0
+      ? [{
+          id: "pending-payments",
+          icon: "card-outline" as const,
+          iconColor: "#F59E0B",
+          title: `${pendingPayments.length} Payment${pendingPayments.length !== 1 ? "s" : ""} Awaiting Review`,
+          body: `${pendingPayments.map((p) => p.submittedBy?.name ?? "Student").slice(0, 3).join(", ")}${pendingPayments.length > 3 ? ` +${pendingPayments.length - 3} more` : ""} claimed transfer. Go to Payments to confirm.`,
+          time: "Now",
+          isRead: false,
+          priority: "high" as const,
+        }]
+      : []),
     ...(pending.length > 0
       ? [{
           id: "pending-approvals",
@@ -47,6 +62,7 @@ export default function AdminNotificationsScreen() {
           body: `${pending.map((s) => `${s.firstName} ${s.surname}`).slice(0, 3).join(", ")}${pending.length > 3 ? ` +${pending.length - 3} more` : ""} are awaiting document verification.`,
           time: "Today",
           isRead: false,
+          priority: "normal" as const,
         }]
       : []),
     ...(todayClasses.length > 0
@@ -58,20 +74,22 @@ export default function AdminNotificationsScreen() {
           body: todayClasses.map((c) => `${c.courseCode} at ${c.startTime}`).join(" · "),
           time: "Today",
           isRead: false,
+          priority: "normal" as const,
         }]
       : []),
     ...(unpaidContributions.length > 0
       ? [{
           id: "unpaid-contributions",
-          icon: "card-outline" as const,
+          icon: "wallet-outline" as const,
           iconColor: "#EF4444",
           title: `${unpaidContributions.length} Unpaid Contribution${unpaidContributions.length !== 1 ? "s" : ""}`,
           body: `₦${unpaidContributions.reduce((s, c) => s + c.amount, 0).toLocaleString()} outstanding across ${unpaidContributions.length} student${unpaidContributions.length !== 1 ? "s" : ""}.`,
           time: "This week",
           isRead: true,
+          priority: "normal" as const,
         }]
       : []),
-    ...(announcements.slice(0, 3).map((a, i) => ({
+    ...(announcements.slice(0, 2).map((a, i) => ({
       id: `ann-${i}`,
       icon: "megaphone-outline" as const,
       iconColor: "#8B5CF6",
@@ -79,15 +97,23 @@ export default function AdminNotificationsScreen() {
       body: `Posted to ${a.targetAudience}${a.postedBy ? ` by ${a.postedBy}` : ""}.`,
       time: a.time,
       isRead: true,
+      priority: "normal" as const,
     }))),
   ];
 
-  const [notifs, setNotifs] = useState<AdminNotif[]>(derived);
-  const unreadCount = notifs.filter((n) => !n.isRead).length;
+  const liveNotifs: AdminNotif[] = adminNotifications.map((n) => ({
+    ...n,
+    icon: n.icon as keyof typeof Ionicons.glyphMap,
+  }));
 
-  const markAll = () => {
+  const allNotifs = [...liveNotifs, ...derived];
+  const unreadCount = allNotifs.filter((n) => !n.isRead).length;
+
+  const markAllRead = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    liveNotifs.forEach((n) => {
+      if (!n.isRead) markAdminNotificationRead(n.id);
+    });
   };
 
   return (
@@ -111,7 +137,7 @@ export default function AdminNotificationsScreen() {
             </Text>
           </View>
           {unreadCount > 0 && (
-            <TouchableOpacity onPress={markAll} style={styles.markAllBtn}>
+            <TouchableOpacity onPress={markAllRead} style={styles.markAllBtn}>
               <Text style={styles.markAllText}>Mark all read</Text>
             </TouchableOpacity>
           )}
@@ -119,7 +145,7 @@ export default function AdminNotificationsScreen() {
       </LinearGradient>
 
       <FlatList
-        data={notifs}
+        data={allNotifs}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.list,
@@ -140,9 +166,9 @@ export default function AdminNotificationsScreen() {
             style={[styles.row, { backgroundColor: item.isRead ? colors.background : colors.primary + "08" }]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setNotifs((prev) =>
-                prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n))
-              );
+              if (liveNotifs.find((n) => n.id === item.id)) {
+                markAdminNotificationRead(item.id);
+              }
             }}
             activeOpacity={0.7}
           >
@@ -154,7 +180,16 @@ export default function AdminNotificationsScreen() {
                 <Text style={[styles.notifTitle, { color: colors.foreground }]} numberOfLines={1}>
                   {item.title}
                 </Text>
-                {!item.isRead && <View style={[styles.dot, { backgroundColor: colors.primary }]} />}
+                {!item.isRead && (
+                  <View style={styles.badgeRow}>
+                    {item.priority === "high" && (
+                      <View style={[styles.highBadge, { backgroundColor: "#EF4444" }]}>
+                        <Text style={styles.highBadgeText}>!</Text>
+                      </View>
+                    )}
+                    <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+                  </View>
+                )}
               </View>
               <Text style={[styles.notifBody, { color: colors.mutedForeground }]} numberOfLines={2}>
                 {item.body}
@@ -182,6 +217,9 @@ const styles = StyleSheet.create({
   iconWrap: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", marginTop: 2 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   notifTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold", flex: 1 },
+  badgeRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  highBadge: { width: 16, height: 16, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  highBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#fff" },
   dot: { width: 8, height: 8, borderRadius: 4 },
   notifBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   time: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },

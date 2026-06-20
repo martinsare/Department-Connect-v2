@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { updateRegisteredStudentStatus } from "./registeredStudentsStore";
+import { sendLocalPush } from "@/utils/pushNotification";
 
 export type StudentStatus = "active" | "pending" | "rejected" | "suspended";
 export type ClassStatus = "upcoming" | "ongoing" | "completed" | "cancelled";
@@ -62,6 +63,17 @@ export interface ClassAttendee {
 export interface AppNotification {
   id: string;
   category: NotificationCategory;
+  title: string;
+  body: string;
+  time: string;
+  isRead: boolean;
+  priority: "high" | "normal";
+}
+
+export interface AdminNotification {
+  id: string;
+  icon: string;
+  iconColor: string;
   title: string;
   body: string;
   time: string;
@@ -639,6 +651,8 @@ interface DataContextValue {
   auditLogs: AuditLog[];
   markNotificationRead: (id: string) => void;
   deleteNotification: (id: string) => void;
+  adminNotifications: AdminNotification[];
+  markAdminNotificationRead: (id: string) => void;
   approveStudent: (id: string) => void;
   rejectStudent: (id: string, reason: string) => void;
   classAttendees: Record<string, ClassAttendee[]>;
@@ -664,6 +678,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [students, setStudents] = useState<StudentRecord[]>(STUDENTS);
   const [classes, setClasses] = useState<ClassSession[]>(CLASSES);
   const [notifications, setNotifications] = useState<AppNotification[]>(NOTIFICATIONS);
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotification[]>([]);
   const [contributions, setContributions] = useState<Contribution[]>(CONTRIBUTIONS);
   const [events, setEvents] = useState<AppEvent[]>(EVENTS);
   const [announcements, setAnnouncements] = useState<Announcement[]>(ANNOUNCEMENTS);
@@ -676,6 +691,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const deleteNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const markAdminNotificationRead = (id: string) => {
+    setAdminNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
   };
 
   const approveStudent = (id: string) => {
@@ -717,18 +736,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
     const item = contributions.find((c) => c.id === id);
     if (item) {
+      const studentTitle = "Payment Pending Confirmation";
+      const studentBody = `Your transfer for "${item.title}" (₦${item.amount.toLocaleString()}) is awaiting Admin confirmation. You'll be notified once reviewed.`;
+      const adminTitle = "New Payment Claim";
+      const adminBody = `${submitter.name} (${submitter.matricNumber}) claims to have paid ₦${item.amount.toLocaleString()} for "${item.title}". Tap to review.`;
+
       setNotifications((prev) => [
-        {
-          id: `notif_pay_pending_${id}_${Date.now()}`,
-          category: "extras",
-          title: "Payment Pending Confirmation",
-          body: `Your transfer for "${item.title}" (₦${item.amount.toLocaleString()}) is awaiting Admin confirmation. You'll be notified once reviewed.`,
-          time: "Just now",
-          isRead: false,
-          priority: "normal",
-        },
+        { id: `notif_pay_pending_${id}_${Date.now()}`, category: "extras", title: studentTitle, body: studentBody, time: "Just now", isRead: false, priority: "normal" },
         ...prev,
       ]);
+
+      setAdminNotifications((prev) => [
+        { id: `admin_pay_pending_${id}_${Date.now()}`, icon: "card-outline", iconColor: "#F59E0B", title: adminTitle, body: adminBody, time: "Just now", isRead: false, priority: "high" },
+        ...prev,
+      ]);
+
+      sendLocalPush(adminTitle, adminBody);
     }
   };
 
@@ -742,18 +765,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
     const item = contributions.find((c) => c.id === id);
     if (item) {
+      const studentTitle = "Payment Confirmed ✓";
+      const studentBody = `Your payment of ₦${item.amount.toLocaleString()} for "${item.title}" has been confirmed by Admin. Thank you!`;
+      const adminLog = "Payment Confirmed";
+      const adminLogBody = `Admin confirmed ₦${item.amount.toLocaleString()} payment for "${item.title}" (${item.submittedBy?.name ?? "Student"}).`;
+
       setNotifications((prev) => [
-        {
-          id: `notif_pay_confirmed_${id}_${Date.now()}`,
-          category: "extras",
-          title: "Payment Confirmed ✓",
-          body: `Your payment of ₦${item.amount.toLocaleString()} for "${item.title}" has been confirmed by Admin. Thank you!`,
-          time: "Just now",
-          isRead: false,
-          priority: "normal",
-        },
+        { id: `notif_pay_confirmed_${id}_${Date.now()}`, category: "extras", title: studentTitle, body: studentBody, time: "Just now", isRead: false, priority: "normal" },
         ...prev,
       ]);
+
+      setAdminNotifications((prev) => [
+        { id: `admin_pay_confirmed_${id}_${Date.now()}`, icon: "checkmark-circle-outline", iconColor: "#10B981", title: adminLog, body: adminLogBody, time: "Just now", isRead: false, priority: "normal" },
+        ...prev,
+      ]);
+
+      sendLocalPush(studentTitle, studentBody);
     }
   };
 
@@ -766,18 +793,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     );
     const item = contributions.find((c) => c.id === id);
     if (item) {
+      const studentTitle = "Payment Rejected";
+      const studentBody = `Your payment for "${item.title}" was rejected: ${reason}. Please transfer the correct amount and try again.`;
+      const adminLog = "Payment Rejected";
+      const adminLogBody = `Admin rejected ₦${item.amount.toLocaleString()} claim for "${item.title}" (${item.submittedBy?.name ?? "Student"}). Reason: ${reason}`;
+
       setNotifications((prev) => [
-        {
-          id: `notif_pay_rejected_${id}_${Date.now()}`,
-          category: "extras",
-          title: "Payment Rejected",
-          body: `Your payment for "${item.title}" was rejected: ${reason}. Please transfer the correct amount and try again.`,
-          time: "Just now",
-          isRead: false,
-          priority: "high",
-        },
+        { id: `notif_pay_rejected_${id}_${Date.now()}`, category: "extras", title: studentTitle, body: studentBody, time: "Just now", isRead: false, priority: "high" },
         ...prev,
       ]);
+
+      setAdminNotifications((prev) => [
+        { id: `admin_pay_rejected_${id}_${Date.now()}`, icon: "close-circle-outline", iconColor: "#EF4444", title: adminLog, body: adminLogBody, time: "Just now", isRead: false, priority: "normal" },
+        ...prev,
+      ]);
+
+      sendLocalPush(studentTitle, studentBody);
     }
   };
 
@@ -864,6 +895,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         auditLogs: AUDIT_LOGS,
         markNotificationRead,
         deleteNotification,
+        adminNotifications,
+        markAdminNotificationRead,
         approveStudent,
         rejectStudent,
         classAttendees,
