@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
+  "workspaces": [
+    "artifacts/*"
+  ],
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "typecheck": "pnpm -r --filter \"./artifacts/**\" --if-present run typecheck"
