@@ -70,6 +70,13 @@ export default function AdminDashboard() {
   const [showAnnounce, setShowAnnounce] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [modalAttSem, setModalAttSem] = useState<1 | 2>(1);
+  const [modalAttLevel, setModalAttLevel] = useState("All");
+
+  const filterAttByLevel = (records: typeof attendanceS1, lf: string) => {
+    if (lf === "All") return records;
+    const prefix = lf[0];
+    return records.filter((r) => { const m = r.courseCode.match(/\d+/); return m ? m[0][0] === prefix : false; });
+  };
   const [annTitle, setAnnTitle] = useState("");
   const [annBody, setAnnBody] = useState("");
   const [annTarget, setAnnTarget] = useState("All Students");
@@ -86,7 +93,8 @@ export default function AdminDashboard() {
   const totalCapacity = classes.length * 25;
   const attRate = Math.round((totalAttended / totalCapacity) * 100);
 
-  const modalAttRecords = modalAttSem === 1 ? attendanceS1 : attendanceS2;
+  const allModalAttRecords = modalAttSem === 1 ? attendanceS1 : attendanceS2;
+  const modalAttRecords = filterAttByLevel(allModalAttRecords, modalAttLevel);
   const modalAvgAtt = modalAttRecords.length > 0
     ? Math.round(modalAttRecords.reduce((s, r) => s + r.percentage, 0) / modalAttRecords.length)
     : 0;
@@ -276,9 +284,27 @@ export default function AdminDashboard() {
                   ))}
                 </View>
               </View>
-              <Text style={[{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginBottom: 10, marginTop: 2 }]}>
-                {modalAttSem === 1 ? "1st" : "2nd"} Semester · {modalAttRecords.length} courses · avg {modalAvgAtt}%
+              <Text style={[{ fontSize: 11, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginBottom: 6, marginTop: 2 }]}>
+                {modalAttSem === 1 ? "1st" : "2nd"} Semester · {modalAttRecords.length} course{modalAttRecords.length !== 1 ? "s" : ""} · avg {modalAvgAtt}%
               </Text>
+
+              {/* Level filter chips */}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }} contentContainerStyle={{ gap: 6 }}>
+                {["All", "100L", "200L", "300L", "400L", "500L"].map((lf) => {
+                  const sel = modalAttLevel === lf;
+                  return (
+                    <TouchableOpacity
+                      key={lf}
+                      style={{ paddingHorizontal: 11, paddingVertical: 4, borderRadius: 20, backgroundColor: sel ? colors.primary : colors.muted, borderWidth: 1, borderColor: sel ? colors.primary : colors.border }}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setModalAttLevel(lf); }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: sel ? "#fff" : colors.mutedForeground }}>{lf}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
               <View style={anlStyles.metricRow}>
                 <View style={[anlStyles.metricBox, { backgroundColor: "#7C3AED15", flex: 1 }]}>
                   <Ionicons name="people-outline" size={20} color="#7C3AED" />
@@ -292,8 +318,12 @@ export default function AdminDashboard() {
                 </View>
               </View>
 
-              {/* Per-course attendance bar chart — uses real attendance records, not raw sessions */}
-              {modalAttRecords.map((r) => {
+              {/* Per-course attendance bar chart */}
+              {modalAttRecords.length === 0 ? (
+                <Text style={[anlStyles.barLabel, { color: colors.mutedForeground, textAlign: "center", paddingVertical: 12 }]}>
+                  No {modalAttLevel === "All" ? "" : modalAttLevel + " "}courses this semester
+                </Text>
+              ) : modalAttRecords.map((r) => {
                 const pct = r.percentage;
                 return (
                   <View key={r.courseCode} style={anlStyles.barRow}>

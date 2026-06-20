@@ -29,6 +29,13 @@ export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const { students, classes, contributions, attendanceS1, attendanceS2 } = useData();
   const [attSemester, setAttSemester] = useState<1 | 2>(1);
+  const [attLevel, setAttLevel] = useState("All");
+
+  const filterByLevel = (records: typeof attendanceS1, lf: string) => {
+    if (lf === "All") return records;
+    const prefix = lf[0];
+    return records.filter((r) => { const m = r.courseCode.match(/\d+/); return m ? m[0][0] === prefix : false; });
+  };
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
@@ -48,7 +55,8 @@ export default function AnalyticsScreen() {
     ? Math.round(totalCollected / (totalCollected + totalOutstanding) * 100)
     : 0;
 
-  const attRecords = attSemester === 1 ? attendanceS1 : attendanceS2;
+  const allAttRecords = attSemester === 1 ? attendanceS1 : attendanceS2;
+  const attRecords = filterByLevel(allAttRecords, attLevel);
   const avgAtt = attRecords.length > 0
     ? Math.round(attRecords.reduce((s, r) => s + r.percentage, 0) / attRecords.length)
     : 0;
@@ -56,6 +64,7 @@ export default function AnalyticsScreen() {
   const switchAttSemester = (s: 1 | 2) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setAttSemester(s);
+    setAttLevel("All");
   };
 
   return (
@@ -127,22 +136,46 @@ export default function AnalyticsScreen() {
             </View>
           </View>
           <Text style={[styles.semLabel, { color: colors.mutedForeground }]}>
-            {attSemester === 1 ? "1st" : "2nd"} Semester · {attRecords.length} courses · avg {avgAtt}%
+            {attSemester === 1 ? "1st" : "2nd"} Semester · {attRecords.length} course{attRecords.length !== 1 ? "s" : ""} · avg {avgAtt}%
           </Text>
-          <View style={{ gap: 12, marginTop: 12 }}>
-            {attRecords.map((r) => (
-              <View key={r.courseCode} style={styles.levelRow}>
-                <Text style={[styles.courseCode, { color: colors.primary }]}>{r.courseCode}</Text>
-                <View style={{ flex: 1 }}>
-                  <ProgressBar
-                    value={r.percentage}
-                    max={100}
-                    color={r.percentage >= 80 ? colors.success : r.percentage >= 70 ? colors.warning : colors.destructive}
-                  />
+
+          {/* Level filter */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10, marginBottom: 4 }} contentContainerStyle={{ gap: 6 }}>
+            {["All", "100L", "200L", "300L", "400L", "500L"].map((lf) => {
+              const sel = attLevel === lf;
+              return (
+                <TouchableOpacity
+                  key={lf}
+                  style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, backgroundColor: sel ? colors.primary : colors.muted, borderWidth: 1, borderColor: sel ? colors.primary : colors.border }}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAttLevel(lf); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={{ fontSize: 12, fontFamily: "Inter_600SemiBold", color: sel ? "#fff" : colors.mutedForeground }}>{lf}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {attRecords.length === 0 ? (
+            <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.mutedForeground, textAlign: "center", paddingVertical: 16 }}>
+              No {attLevel} courses this semester
+            </Text>
+          ) : (
+            <View style={{ gap: 12, marginTop: 12 }}>
+              {attRecords.map((r) => (
+                <View key={r.courseCode} style={styles.levelRow}>
+                  <Text style={[styles.courseCode, { color: colors.primary }]}>{r.courseCode}</Text>
+                  <View style={{ flex: 1 }}>
+                    <ProgressBar
+                      value={r.percentage}
+                      max={100}
+                      color={r.percentage >= 80 ? colors.success : r.percentage >= 70 ? colors.warning : colors.destructive}
+                    />
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Contributions */}
