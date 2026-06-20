@@ -6,6 +6,7 @@ export default function DeveloperLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(home)" />
       <Stack.Screen name="notifications" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

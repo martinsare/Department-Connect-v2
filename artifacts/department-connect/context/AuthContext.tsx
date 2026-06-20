@@ -30,6 +30,7 @@ export interface AuthUser {
   subRole?: AdminSubRole;
   birthdayPrivacy?: boolean;
   hideYear?: boolean;
+  profilePicture?: string;
 }
 
 interface AuthContextValue {

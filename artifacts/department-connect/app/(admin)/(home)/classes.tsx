@@ -17,6 +17,7 @@ import QRCode from "react-native-qrcode-svg";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import type { ClassSession, ClassAttendee } from "@/context/DataContext";
+import { Avatar } from "@/components/Avatar";
 
 const QR_TOKEN = "DEPT_CONNECT_2026";
 
@@ -36,6 +37,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 function AttendeeRow({ item, index }: { item: ClassAttendee; index: number }) {
   const colors = useColors();
+  const { students } = useData();
   const initials = item.name
     .split(" ")
     .map((w) => w[0])
@@ -45,12 +47,17 @@ function AttendeeRow({ item, index }: { item: ClassAttendee; index: number }) {
 
   const avatarColors = ["#7C3AED", "#8B5CF6", "#A78BFA", "#6D28D9", "#5B21B6"];
   const bg = avatarColors[index % avatarColors.length];
+  const studentPic = students.find((s) => s.matricNumber === item.matricNumber)?.profilePicture;
 
   return (
     <View style={[rosterStyles.row, { borderBottomColor: colors.border }]}>
-      <View style={[rosterStyles.avatar, { backgroundColor: bg }]}>
-        <Text style={rosterStyles.avatarText}>{initials}</Text>
-      </View>
+      <Avatar
+        uri={studentPic}
+        initials={initials}
+        size={38}
+        backgroundColor={bg}
+        textColor="#fff"
+      />
       <View style={{ flex: 1 }}>
         <Text style={[rosterStyles.name, { color: colors.foreground }]}>{item.name}</Text>
         <Text style={[rosterStyles.matric, { color: colors.mutedForeground }]}>

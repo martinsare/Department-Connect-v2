@@ -24,6 +24,7 @@ export interface StudentRecord {
   status: StudentStatus;
   submittedAt?: string;
   rejectionReason?: string;
+  profilePicture?: string;
 }
 
 export interface ClassSession {
@@ -621,6 +622,7 @@ interface DataContextValue {
   payContribution: (id: string) => void;
   addStudent: (student: Omit<StudentRecord, "id">) => void;
   updateStudentLevel: (id: string, level: string) => void;
+  updateStudentPicture: (matricNumber: string, uri: string) => void;
   bulkUpdateLevel: (fromLevel: string, toLevel: string) => number;
   createEvent: (event: Omit<AppEvent, "id">) => void;
   createClass: (cls: Omit<ClassSession, "id">) => void;
@@ -706,6 +708,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setStudents((prev) => prev.map((s) => s.id === id ? { ...s, level } : s));
   };
 
+  const updateStudentPicture = (matricNumber: string, uri: string) => {
+    setStudents((prev) =>
+      prev.map((s) => s.matricNumber === matricNumber ? { ...s, profilePicture: uri } : s)
+    );
+  };
+
   const bulkUpdateLevel = (fromLevel: string, toLevel: string): number => {
     let count = 0;
     setStudents((prev) =>
@@ -773,6 +781,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         payContribution,
         addStudent,
         updateStudentLevel,
+        updateStudentPicture,
         bulkUpdateLevel,
         createEvent,
         createClass,

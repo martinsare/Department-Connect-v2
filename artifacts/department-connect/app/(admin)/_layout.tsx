@@ -6,6 +6,7 @@ export default function AdminLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(home)" />
       <Stack.Screen name="notifications" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

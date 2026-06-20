@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { useData, type StudentStatus } from "@/context/DataContext";
 import { formatDob } from "@/utils/formatDob";
 import { useColors } from "@/hooks/useColors";
+import { Avatar } from "@/components/Avatar";
 
 const LEVELS = ["All", "100L", "200L", "300L", "400L", "500L", "Graduated"];
 const LEVEL_OPTIONS = ["100L", "200L", "300L", "400L", "500L", "Graduated"];
@@ -245,9 +246,13 @@ export default function StudentsScreen() {
               onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setDetailStudent(s); }}
               activeOpacity={0.85}
             >
-              <View style={[styles.avatar, { backgroundColor: colors.secondary }]}>
-                <Text style={[styles.avatarText, { color: colors.primary }]}>{s.firstName[0]}{s.surname[0]}</Text>
-              </View>
+              <Avatar
+                uri={s.profilePicture}
+                initials={`${s.firstName[0]}${s.surname[0]}`}
+                size={48}
+                backgroundColor={colors.secondary}
+                textColor={colors.primary}
+              />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.studentName, { color: colors.foreground }]}>{s.firstName} {s.surname}</Text>
                 <Text style={[styles.studentMeta, { color: colors.mutedForeground }]}>{s.matricNumber}  ·  {formatDob(s.dob, s.hideYear ?? true)}</Text>
@@ -276,9 +281,13 @@ export default function StudentsScreen() {
               return (
                 <>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 20 }}>
-                    <View style={[styles.avatar, { backgroundColor: colors.secondary, width: 56, height: 56, borderRadius: 28 }]}>
-                      <Text style={[styles.avatarText, { color: colors.primary, fontSize: 20 }]}>{initials}</Text>
-                    </View>
+                    <Avatar
+                      uri={detailStudent.profilePicture}
+                      initials={initials}
+                      size={56}
+                      backgroundColor={colors.secondary}
+                      textColor={colors.primary}
+                    />
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontSize: 18, fontFamily: "Inter_700Bold", color: colors.foreground }}>{detailStudent.firstName} {detailStudent.surname}</Text>
                       <Text style={{ fontSize: 13, fontFamily: "Inter_400Regular", color: colors.mutedForeground, marginTop: 2 }}>{detailStudent.matricNumber}</Text>

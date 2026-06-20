@@ -15,9 +15,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/context/AuthContext";
+import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 import { formatDob } from "@/utils/formatDob";
+import { Avatar } from "@/components/Avatar";
 
 function InfoRow({ label, value, editable = false }: { label: string; value: string; editable?: boolean }) {
   const colors = useColors();
@@ -49,6 +52,7 @@ export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user, logout, updateUser } = useAuth();
+  const { updateStudentPicture } = useData();
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [birthdayPrivacy, setBirthdayPrivacy] = useState(user?.birthdayPrivacy ?? false);
@@ -63,6 +67,26 @@ export default function ProfileScreen() {
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const initials = `${user?.firstName?.[0] ?? ""}${user?.surname?.[0] ?? ""}`;
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Allow access to your photo library to upload a profile picture.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const uri = result.assets[0].uri;
+      updateUser({ profilePicture: uri });
+      if (user?.matricNumber) updateStudentPicture(user.matricNumber, uri);
+    }
+  };
 
   const handleSave = () => {
     updateUser({ phone, email, birthdayPrivacy });
@@ -113,9 +137,20 @@ export default function ProfileScreen() {
         colors={[colors.gradientStart, colors.gradientEnd]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
+        <TouchableOpacity style={styles.avatarWrap} onPress={pickImage} activeOpacity={0.85}>
+          <Avatar
+            uri={user?.profilePicture}
+            initials={initials}
+            size={80}
+            backgroundColor="rgba(255,255,255,0.25)"
+            textColor="#fff"
+            borderWidth={3}
+            borderColor="rgba(255,255,255,0.5)"
+          />
+          <View style={styles.cameraOverlay}>
+            <Ionicons name="camera" size={13} color="#fff" />
+          </View>
+        </TouchableOpacity>
         <Text style={styles.fullName}>{user?.firstName} {user?.surname}</Text>
         <View style={styles.badges}>
           <View style={styles.levelBadge}>
@@ -337,18 +372,14 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   header: { alignItems: "center", paddingHorizontal: 20, paddingBottom: 28 },
-  avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "rgba(255,255,255,0.5)",
-    marginBottom: 12,
+  avatarWrap: { position: "relative", marginBottom: 12 },
+  cameraOverlay: {
+    position: "absolute", bottom: 0, right: 0,
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: "#7C3AED",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "#fff",
   },
-  avatarText: { fontSize: 28, fontFamily: "Inter_700Bold", color: "#fff" },
   fullName: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#fff" },
   badges: { flexDirection: "row", gap: 8, marginTop: 8 },
   levelBadge: {

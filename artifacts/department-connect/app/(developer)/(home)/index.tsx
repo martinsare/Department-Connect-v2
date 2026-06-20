@@ -8,6 +8,7 @@ import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { Avatar } from "@/components/Avatar";
 
 export default function DeveloperDashboard() {
   const colors = useColors();
@@ -39,14 +40,29 @@ export default function DeveloperDashboard() {
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <View style={styles.headerRow}>
-          <View>
-            <View style={styles.devBadge}>
-              <Ionicons name="code-slash" size={12} color="#F59E0B" />
-              <Text style={styles.devBadgeText}>Super Admin</Text>
+          <TouchableOpacity
+            style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/(developer)/profile"); }}
+            activeOpacity={0.85}
+          >
+            <Avatar
+              uri={user?.profilePicture}
+              initials={`${user?.firstName?.[0] ?? ""}${user?.surname?.[0] ?? ""}`}
+              size={48}
+              backgroundColor="rgba(255,255,255,0.15)"
+              textColor="#fff"
+              borderWidth={2}
+              borderColor="rgba(255,255,255,0.35)"
+            />
+            <View>
+              <View style={styles.devBadge}>
+                <Ionicons name="code-slash" size={12} color="#F59E0B" />
+                <Text style={styles.devBadgeText}>Super Admin</Text>
+              </View>
+              <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
+              <Text style={styles.id}>{user?.staffId}</Text>
             </View>
-            <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
-            <Text style={styles.id}>{user?.staffId}</Text>
-          </View>
+          </TouchableOpacity>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <TouchableOpacity
               style={styles.bellBtn}
@@ -71,6 +87,7 @@ export default function DeveloperDashboard() {
             </TouchableOpacity>
           </View>
         </View>
+
 
         <View style={styles.metricGrid}>
           {systemMetrics.map((m) => (

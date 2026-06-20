@@ -18,6 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
+import { Avatar } from "@/components/Avatar";
 
 function StatCard({
   label,
@@ -142,11 +143,26 @@ export default function AdminDashboard() {
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.greeting}>Admin Panel</Text>
-            <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
-            <Text style={styles.role}>{user?.subRole ?? "Admin"}  ·  {user?.department}</Text>
-          </View>
+          <TouchableOpacity
+            style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/(admin)/profile"); }}
+            activeOpacity={0.85}
+          >
+            <Avatar
+              uri={user?.profilePicture}
+              initials={`${user?.firstName?.[0] ?? ""}${user?.surname?.[0] ?? ""}`}
+              size={48}
+              backgroundColor="rgba(255,255,255,0.25)"
+              textColor="#fff"
+              borderWidth={2}
+              borderColor="rgba(255,255,255,0.5)"
+            />
+            <View>
+              <Text style={styles.greeting}>Admin Panel</Text>
+              <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
+              <Text style={styles.role}>{user?.subRole ?? "Admin"}  ·  {user?.department}</Text>
+            </View>
+          </TouchableOpacity>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <TouchableOpacity
               style={styles.bellBtn}
