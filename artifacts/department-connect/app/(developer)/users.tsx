@@ -211,7 +211,6 @@ export default function UsersScreen() {
               if (isStudent) {
                 infoRows.push({ label: "Matric Number", value: u.matricNumber ?? "—", icon: "id-card-outline" });
                 infoRows.push({ label: "Level", value: u.level ?? "—", icon: "layers-outline" });
-                infoRows.push({ label: "Date of Birth", value: u.dob ? formatDob(u.dob, u.hideYear ?? true) : "—", icon: "calendar-outline" });
               } else {
                 infoRows.push({ label: "Staff ID", value: u.staffId ?? "—", icon: "id-card-outline" });
                 infoRows.push({ label: "Sub-role", value: u.subRole ? (SUB_ROLE_LABELS[u.subRole as AdminSubRole] ?? u.subRole) : "—", icon: "ribbon-outline" });
