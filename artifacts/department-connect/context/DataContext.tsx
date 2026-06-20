@@ -285,10 +285,24 @@ const CLASSES: ClassSession[] = [
 
 const ATTENDANCE_S1: AttendanceRecord[] = [
   { courseCode: "CSC301", courseName: "Data Structures", attended: 18, total: 20, percentage: 90 },
-  { courseCode: "CSC305", courseName: "Software Engineering", attended: 14, total: 18, percentage: 78 },
-  { courseCode: "CSC309", courseName: "Computer Networks", attended: 12, total: 15, percentage: 80 },
-  { courseCode: "CSC311", courseName: "Database Systems", attended: 16, total: 20, percentage: 80 },
-  { courseCode: "CSC313", courseName: "Computer Architecture", attended: 9, total: 12, percentage: 75 },
+  { courseCode: "CSC303", courseName: "Software Engineering", attended: 14, total: 18, percentage: 78 },
+  { courseCode: "CSC305", courseName: "Computer Networks", attended: 12, total: 15, percentage: 80 },
+  { courseCode: "CSC307", courseName: "Database Systems", attended: 16, total: 20, percentage: 80 },
+  { courseCode: "CSC309", courseName: "Computer Architecture", attended: 9, total: 12, percentage: 75 },
+  { courseCode: "CSC311", courseName: "Discrete Mathematics", attended: 11, total: 16, percentage: 69 },
+  { courseCode: "GST301", courseName: "Entrepreneurship", attended: 15, total: 18, percentage: 83 },
+  { courseCode: "CSC313", courseName: "Systems Programming", attended: 8, total: 14, percentage: 57 },
+];
+
+const ATTENDANCE_S2: AttendanceRecord[] = [
+  { courseCode: "CSC302", courseName: "Theory of Computation", attended: 16, total: 19, percentage: 84 },
+  { courseCode: "CSC304", courseName: "Operating Systems", attended: 13, total: 18, percentage: 72 },
+  { courseCode: "CSC306", courseName: "Compiler Design", attended: 10, total: 16, percentage: 63 },
+  { courseCode: "CSC308", courseName: "Artificial Intelligence", attended: 17, total: 20, percentage: 85 },
+  { courseCode: "CSC310", courseName: "Computer Graphics", attended: 14, total: 17, percentage: 82 },
+  { courseCode: "CSC312", courseName: "Information Systems", attended: 11, total: 18, percentage: 61 },
+  { courseCode: "GST302", courseName: "Technical Writing", attended: 16, total: 18, percentage: 89 },
+  { courseCode: "CSC314", courseName: "Numerical Analysis", attended: 9, total: 15, percentage: 60 },
 ];
 
 function att(id: string, name: string, matric: string, time: string, level = "300L"): ClassAttendee {
@@ -586,6 +600,7 @@ interface DataContextValue {
   students: StudentRecord[];
   classes: ClassSession[];
   attendanceS1: AttendanceRecord[];
+  attendanceS2: AttendanceRecord[];
   notifications: AppNotification[];
   contributions: Contribution[];
   events: AppEvent[];
@@ -717,6 +732,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         students,
         classes,
         attendanceS1: ATTENDANCE_S1,
+        attendanceS2: ATTENDANCE_S2,
         notifications,
         contributions,
         events,

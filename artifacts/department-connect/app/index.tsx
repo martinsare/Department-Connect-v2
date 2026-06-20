@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { Redirect, View } from "react-native";
+import React, { useState } from "react";
+import { View } from "react-native";
+import { Redirect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
-import { useColors } from "@/hooks/useColors";
 import SplashLoader from "@/components/SplashLoader";
 
 export default function Index() {
   const { user, isLoading } = useAuth();
-  const colors = useColors();
   const [splashDone, setSplashDone] = useState(false);
 
   const showSplash = !splashDone;
