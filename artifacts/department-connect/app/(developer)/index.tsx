@@ -18,7 +18,7 @@ export default function DeveloperDashboard() {
   const stats = [
     { label: "Students", value: students.length, color: colors.primary, icon: "people-outline" as const },
     { label: "Admins", value: 3, color: colors.info, icon: "shield-outline" as const },
-    { label: "Developers", value: 1, color: colors.warning, icon: "code-slash-outline" as const },
+    { label: "Super Admins", value: 1, color: colors.warning, icon: "code-slash-outline" as const },
     { label: "Classes Today", value: classes.filter((c) => c.date === "2026-06-20").length, color: colors.success, icon: "school-outline" as const },
   ];
 
@@ -39,7 +39,7 @@ export default function DeveloperDashboard() {
           <View>
             <View style={styles.devBadge}>
               <Ionicons name="code-slash" size={12} color="#F59E0B" />
-              <Text style={styles.devBadgeText}>Developer</Text>
+              <Text style={styles.devBadgeText}>Super Admin</Text>
             </View>
             <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
             <Text style={styles.id}>{user?.staffId}</Text>

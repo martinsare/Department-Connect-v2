@@ -22,7 +22,7 @@ const ROLE_COLORS: Record<string, string> = {
   Lecturer: "#F59E0B",
   "Course Rep": "#F59E0B",
   "Dept. Executive": "#F59E0B",
-  Developer: "#8B5CF6",
+  "Super Admin": "#8B5CF6",
   System: "#6B7280",
 };
 

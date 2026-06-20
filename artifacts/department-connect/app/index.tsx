@@ -1,19 +1,25 @@
-import { Redirect } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Redirect, View } from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
+import SplashLoader from "@/components/SplashLoader";
 
 export default function Index() {
   const { user, isLoading } = useAuth();
   const colors = useColors();
+  const [splashDone, setSplashDone] = useState(false);
 
-  if (isLoading) {
+  const showSplash = !splashDone;
+
+  if (showSplash) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        <ActivityIndicator color={colors.primary} size="large" />
+      <View style={{ flex: 1, backgroundColor: "#0D0720" }}>
+        <SplashLoader onDone={() => setSplashDone(true)} />
       </View>
     );
   }
+
+  if (isLoading) return null;
 
   if (!user) return <Redirect href="/login" />;
   if (user.role === "student") return <Redirect href="/(student)/" />;

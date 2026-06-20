@@ -27,6 +27,13 @@ const ROLE_COLORS: Record<string, string> = {
   developer: "#8B5CF6",
 };
 
+const ROLE_DISPLAY: Record<RoleFilter, string> = {
+  all: "All",
+  student: "Student",
+  admin: "Admin",
+  developer: "Super Admin",
+};
+
 const SUB_ROLES: AdminSubRole[] = ["Lecturer", "Course Representative", "Department Executive"];
 const SUB_ROLE_LABELS: Record<AdminSubRole, string> = {
   Lecturer: "Lecturer",
@@ -140,7 +147,7 @@ export default function UsersScreen() {
               activeOpacity={0.8}
             >
               <Text style={[styles.filterText, roleFilter === r && styles.filterTextActive]}>
-                {r.charAt(0).toUpperCase() + r.slice(1)}
+                {ROLE_DISPLAY[r]}
               </Text>
             </TouchableOpacity>
           ))}
@@ -166,7 +173,9 @@ export default function UsersScreen() {
                 <Text style={[styles.userMeta, { color: colors.mutedForeground }]}>{u.identifier}  ·  {u.level}</Text>
               </View>
               <View style={[styles.roleBadge, { backgroundColor: roleColor + "15" }]}>
-                <Text style={[styles.roleText, { color: roleColor }]}>{u.role}</Text>
+                <Text style={[styles.roleText, { color: roleColor }]}>
+                  {u.role === "developer" ? "Super Admin" : u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                </Text>
               </View>
             </View>
           );
