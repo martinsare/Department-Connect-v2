@@ -20,6 +20,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
         <Label>Users</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="approvals">
+        <Icon sf={{ default: "checkmark.seal", selected: "checkmark.seal.fill" }} />
+        <Label>Approvals</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="logs">
         <Icon sf={{ default: "list.bullet.clipboard", selected: "list.bullet.clipboard.fill" }} />
         <Label>Logs</Label>
@@ -83,6 +87,18 @@ function ClassicTabLayout() {
               <SymbolView name={focused ? "person.2.fill" : "person.2"} tintColor={color} size={22} />
             ) : (
               <Ionicons name={focused ? "people" : "people-outline"} size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="approvals"
+        options={{
+          title: "Approvals",
+          tabBarIcon: ({ color, focused }) =>
+            isIOS ? (
+              <SymbolView name={focused ? "checkmark.seal.fill" : "checkmark.seal"} tintColor={color} size={22} />
+            ) : (
+              <Ionicons name={focused ? "shield-checkmark" : "shield-checkmark-outline"} size={22} color={color} />
             ),
         }}
       />

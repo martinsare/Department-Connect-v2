@@ -14,8 +14,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useAuth } from "@/context/AuthContext";
+import { PendingAnimation, RejectedAnimation } from "@/components/AnimatedStatus";
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -73,19 +75,13 @@ export default function LoginScreen() {
     return (
       <LinearGradient colors={["#0D0720", "#2D1B69", "#7C3AED"]} style={[styles.gradient, { alignItems: "center", justifyContent: "center", padding: 24 }]}>
         <View style={styles.holdingCard}>
-          <View style={[styles.holdingIconCircle, { backgroundColor: isPending ? "#FEF3C720" : "#FEE2E220" }]}>
-            <Ionicons
-              name={isPending ? "hourglass-outline" : "close-circle-outline"}
-              size={48}
-              color={isPending ? "#F59E0B" : "#EF4444"}
-            />
-          </View>
+          {isPending ? <PendingAnimation /> : <RejectedAnimation />}
           <Text style={styles.holdingTitle}>
             {isPending ? "Account Pending Approval" : "Account Rejected"}
           </Text>
           <Text style={styles.holdingBody}>
             {isPending
-              ? "Your account is currently pending approval by your Lecturer or Course Representative. You will be notified once approved."
+              ? "Your account is currently pending approval. You will be notified once an admin reviews your request."
               : "Your account was rejected. Please contact your Admin for more information and to resubmit your details."}
           </Text>
           <TouchableOpacity
@@ -146,7 +142,12 @@ export default function LoginScreen() {
             />
           </View>
 
-          <Text style={[styles.formLabel, { marginTop: 16 }]}>Password</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16, marginBottom: 8 }}>
+            <Text style={styles.formLabel}>Password</Text>
+            <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/forgot-password"); }} activeOpacity={0.7}>
+              <Text style={styles.forgotLink}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </View>
           <View style={[styles.inputWrap, styles.inputRow]}>
             <TextInput
               style={[styles.input, { flex: 1 }]}
@@ -313,6 +314,7 @@ const styles = StyleSheet.create({
   demoChipLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: "#64748B" },
   demoChipValue: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   demoHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#CBD5E1", textAlign: "center", marginTop: 8 },
+  forgotLink: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
   registerLink: {
     flexDirection: "row", justifyContent: "center", alignItems: "center",
     marginTop: 16, paddingVertical: 4,

@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { router } from "expo-router";
 import { registeredStudentsStore } from "./registeredStudentsStore";
+import { registeredTeachersStore } from "./registeredTeachersStore";
 
 export type UserRole = "student" | "admin" | "developer";
 export type AdminSubRole =
@@ -261,7 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await new Promise((r) => setTimeout(r, 600));
 
       const lower = identifier.toLowerCase().trim();
-      const allUsers = [...DEMO_STUDENTS, ...adminRef.current, DEMO_DEV, ...registeredStudentsStore];
+      const allUsers = [...DEMO_STUDENTS, ...adminRef.current, DEMO_DEV, ...registeredStudentsStore, ...registeredTeachersStore];
       const found = allUsers.find(
         (u) =>
           u.matricNumber?.toLowerCase() === lower ||
@@ -279,16 +280,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: "Incorrect password" };
       }
 
-      if (found.role === "student" && found.status === "pending") {
+      if (found.status === "pending") {
         setIsLoading(false);
         return {
           success: false,
-          error:
-            "Your account is pending approval by your Lecturer or Course Representative.",
+          error: found.role === "admin"
+            ? "Your teacher account is pending approval by Super Admin."
+            : "Your account is pending approval by your Lecturer or Course Representative.",
         };
       }
 
-      if (found.role === "student" && found.status === "rejected") {
+      if (found.status === "rejected") {
         setIsLoading(false);
         return {
           success: false,

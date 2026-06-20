@@ -1,0 +1,247 @@
+import React, { useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+const ONBOARDING_KEY = "dc_onboarding_done";
+
+const SLIDES = [
+  {
+    image: require("../assets/images/onboard1.png"),
+    title: "Welcome to\nDepartment Connect",
+    subtitle: "Your all-in-one academic management platform. Stay connected with your department community.",
+    accent: "#7C3AED",
+  },
+  {
+    image: require("../assets/images/onboard2.png"),
+    title: "Track Classes\n& Attendance",
+    subtitle: "Never miss a class. Scan QR codes for instant attendance, view your records anytime.",
+    accent: "#6D28D9",
+  },
+  {
+    image: require("../assets/images/onboard3.png"),
+    title: "Stay Updated\nInstantly",
+    subtitle: "Get real-time announcements, event notifications, and important updates from your department.",
+    accent: "#5B21B6",
+  },
+  {
+    image: require("../assets/images/onboard4.png"),
+    title: "Your Academic\nCommunity",
+    subtitle: "Connect with classmates, access resources, and manage contributions — all in one place.",
+    accent: "#4C1D95",
+  },
+];
+
+export default function OnboardingScreen() {
+  const insets = useSafeAreaInsets();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
+  const botPad = insets.bottom + 24;
+
+  const goToSlide = (index: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: false }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: false }),
+    ]).start();
+    scrollRef.current?.scrollTo({ x: index * SCREEN_W, animated: true });
+    setActiveIndex(index);
+  };
+
+  const handleNext = () => {
+    if (activeIndex < SLIDES.length - 1) {
+      goToSlide(activeIndex + 1);
+    } else {
+      handleGetStarted();
+    }
+  };
+
+  const handleGetStarted = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+    router.replace("/login");
+  };
+
+  const handleScroll = (e: any) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+    if (idx !== activeIndex) {
+      setActiveIndex(idx);
+    }
+  };
+
+  const slide = SLIDES[activeIndex];
+  const isLast = activeIndex === SLIDES.length - 1;
+
+  return (
+    <View style={styles.root}>
+      {/* Scrollable slides */}
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScroll}
+        scrollEventThrottle={16}
+        style={StyleSheet.absoluteFill}
+      >
+        {SLIDES.map((s, i) => (
+          <View key={i} style={{ width: SCREEN_W, height: SCREEN_H }}>
+            <Image source={s.image} style={styles.slideImage} resizeMode="cover" />
+            <LinearGradient
+              colors={["transparent", "rgba(13,7,32,0.6)", "rgba(13,7,32,0.95)", "#0D0720"]}
+              style={StyleSheet.absoluteFill}
+              locations={[0, 0.35, 0.65, 1]}
+            />
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Skip button */}
+      <View style={[styles.topBar, { paddingTop: topPad + 8 }]}>
+        <View />
+        {!isLast && (
+          <TouchableOpacity onPress={handleGetStarted} style={styles.skipBtn} activeOpacity={0.7}>
+            <Text style={styles.skipText}>Skip</Text>
+            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.6)" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Bottom content */}
+      <Animated.View style={[styles.bottomContent, { paddingBottom: botPad, opacity: fadeAnim }]}>
+        {/* Slide number */}
+        <Text style={styles.slideCounter}>
+          {activeIndex + 1} of {SLIDES.length}
+        </Text>
+
+        {/* Title */}
+        <Text style={styles.title}>{slide.title}</Text>
+
+        {/* Subtitle */}
+        <Text style={styles.subtitle}>{slide.subtitle}</Text>
+
+        {/* Dots */}
+        <View style={styles.dots}>
+          {SLIDES.map((_, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={() => goToSlide(i)}
+              activeOpacity={0.7}
+            >
+              <Animated.View
+                style={[
+                  styles.dot,
+                  i === activeIndex && styles.dotActive,
+                ]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Action button */}
+        <TouchableOpacity
+          style={[styles.nextBtn, { backgroundColor: slide.accent }]}
+          onPress={handleNext}
+          activeOpacity={0.85}
+        >
+          {isLast ? (
+            <>
+              <Ionicons name="rocket-outline" size={18} color="#fff" />
+              <Text style={styles.nextBtnText}>Get Started</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.nextBtnText}>Next</Text>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            </>
+          )}
+        </TouchableOpacity>
+
+        {isLast && (
+          <TouchableOpacity onPress={() => router.push("/login")} style={styles.signinLink} activeOpacity={0.7}>
+            <Text style={styles.signinLinkText}>Already have an account? </Text>
+            <Text style={styles.signinLinkAccent}>Sign In</Text>
+          </TouchableOpacity>
+        )}
+      </Animated.View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#0D0720" },
+  slideImage: { width: SCREEN_W, height: SCREEN_H, position: "absolute" },
+  topBar: {
+    position: "absolute", top: 0, left: 0, right: 0,
+    paddingHorizontal: 24, flexDirection: "row",
+    alignItems: "center", justifyContent: "space-between",
+    zIndex: 10,
+  },
+  skipBtn: {
+    flexDirection: "row", alignItems: "center", gap: 2,
+    backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
+  },
+  skipText: { color: "rgba(255,255,255,0.7)", fontFamily: "Inter_600SemiBold", fontSize: 13 },
+  bottomContent: {
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    paddingHorizontal: 28, paddingTop: 20,
+  },
+  slideCounter: {
+    fontSize: 12, fontFamily: "Inter_600SemiBold",
+    color: "rgba(255,255,255,0.45)", letterSpacing: 1.5,
+    textTransform: "uppercase", marginBottom: 14,
+  },
+  title: {
+    fontSize: 36, fontFamily: "Inter_700Bold",
+    color: "#fff", lineHeight: 44, marginBottom: 14,
+  },
+  subtitle: {
+    fontSize: 15, fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.7)", lineHeight: 24, marginBottom: 32,
+  },
+  dots: { flexDirection: "row", gap: 8, marginBottom: 28 },
+  dot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.25)",
+  },
+  dotActive: {
+    width: 28, height: 8, borderRadius: 4,
+    backgroundColor: "#7C3AED",
+  },
+  nextBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 10, borderRadius: 16, paddingVertical: 16, marginBottom: 16,
+    boxShadow: "0px 8px 20px rgba(124,58,237,0.4)",
+    elevation: 8,
+  },
+  nextBtnText: { color: "#fff", fontSize: 17, fontFamily: "Inter_700Bold" },
+  signinLink: {
+    flexDirection: "row", justifyContent: "center", alignItems: "center",
+    marginBottom: 8,
+  },
+  signinLinkText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.5)" },
+  signinLinkAccent: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#A78BFA" },
+});
+
+export { ONBOARDING_KEY };
