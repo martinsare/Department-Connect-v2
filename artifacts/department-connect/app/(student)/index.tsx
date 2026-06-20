@@ -74,7 +74,7 @@ export default function StudentHome() {
             style={styles.bellBtn}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push("/notifications" as any);
+              router.push("/(student)/notifications");
             }}
             activeOpacity={0.8}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

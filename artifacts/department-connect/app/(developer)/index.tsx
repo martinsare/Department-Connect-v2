@@ -52,7 +52,7 @@ export default function DeveloperDashboard() {
               style={styles.bellBtn}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push("/notifications" as any);
+                router.push("/(developer)/notifications");
               }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >

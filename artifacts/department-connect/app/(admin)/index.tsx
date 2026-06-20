@@ -152,7 +152,7 @@ export default function AdminDashboard() {
               style={styles.bellBtn}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push("/notifications" as any);
+                router.push("/(admin)/notifications");
               }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
