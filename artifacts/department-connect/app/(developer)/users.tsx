@@ -17,7 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
-import type { AdminSubRole } from "@/context/AuthContext";
+import { formatDob } from "@/utils/formatDob";
+import type { AdminSubRole, AuthUser } from "@/context/AuthContext";
 
 type RoleFilter = "all" | "student" | "admin" | "developer";
 
@@ -41,12 +42,15 @@ const SUB_ROLE_LABELS: Record<AdminSubRole, string> = {
   "Department Executive": "Dept. Executive",
 };
 
+type DetailUser = AuthUser & { password: string };
+
 export default function UsersScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { allUsers, addAdmin } = useAuth();
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [showForm, setShowForm] = useState(false);
+  const [detailUser, setDetailUser] = useState<DetailUser | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
@@ -60,16 +64,7 @@ export default function UsersScreen() {
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
-  const displayUsers = allUsers.map((u) => ({
-    id: u.id,
-    name: `${u.firstName} ${u.surname}`,
-    identifier: u.matricNumber ?? u.staffId ?? "—",
-    role: u.role,
-    status: u.status ?? "active",
-    level: u.subRole ? SUB_ROLE_LABELS[u.subRole as AdminSubRole] ?? u.subRole : u.level ?? "—",
-  }));
-
-  const filtered = roleFilter === "all" ? displayUsers : displayUsers.filter((u) => u.role === roleFilter);
+  const filtered = (roleFilter === "all" ? allUsers : allUsers.filter((u) => u.role === roleFilter));
 
   const resetForm = () => {
     setFirstName("");
@@ -161,28 +156,139 @@ export default function UsersScreen() {
         showsVerticalScrollIndicator={false}
         renderItem={({ item: u }) => {
           const roleColor = ROLE_COLORS[u.role] ?? colors.primary;
+          const identifier = u.matricNumber ?? u.staffId ?? "—";
+          const sublabel = u.subRole
+            ? SUB_ROLE_LABELS[u.subRole as AdminSubRole] ?? u.subRole
+            : u.level ?? "—";
           return (
-            <View style={[styles.userRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.userRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setDetailUser(u as DetailUser);
+              }}
+              activeOpacity={0.8}
+            >
               <View style={[styles.avatar, { backgroundColor: roleColor + "20" }]}>
                 <Text style={[styles.avatarText, { color: roleColor }]}>
-                  {u.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                  {u.firstName[0]}{u.surname[0]}
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.userName, { color: colors.foreground }]}>{u.name}</Text>
-                <Text style={[styles.userMeta, { color: colors.mutedForeground }]}>{u.identifier}  ·  {u.level}</Text>
+                <Text style={[styles.userName, { color: colors.foreground }]}>{u.firstName} {u.surname}</Text>
+                <Text style={[styles.userMeta, { color: colors.mutedForeground }]}>{identifier}  ·  {sublabel}</Text>
               </View>
               <View style={[styles.roleBadge, { backgroundColor: roleColor + "15" }]}>
                 <Text style={[styles.roleText, { color: roleColor }]}>
                   {u.role === "developer" ? "Super Admin" : u.role.charAt(0).toUpperCase() + u.role.slice(1)}
                 </Text>
               </View>
-            </View>
+              <Ionicons name="chevron-forward" size={15} color={colors.mutedForeground} style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
           );
         }}
       />
 
-      {/* Add Admin Modal */}
+      {/* ── User Detail Modal ── */}
+      <Modal
+        visible={!!detailUser}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setDetailUser(null)}
+      >
+        <View style={detail.overlay}>
+          <View style={[detail.sheet, { backgroundColor: colors.card }]}>
+            <View style={[detail.handle, { backgroundColor: colors.border }]} />
+            {detailUser && (() => {
+              const u = detailUser;
+              const roleColor = ROLE_COLORS[u.role] ?? colors.primary;
+              const roleLabel = u.role === "developer" ? "Super Admin" : u.role.charAt(0).toUpperCase() + u.role.slice(1);
+              const isStudent = u.role === "student";
+
+              const infoRows: { label: string; value: string; icon: React.ComponentProps<typeof Ionicons>["name"] }[] = [];
+
+              if (isStudent) {
+                infoRows.push({ label: "Matric Number", value: u.matricNumber ?? "—", icon: "id-card-outline" });
+                infoRows.push({ label: "Level", value: u.level ?? "—", icon: "layers-outline" });
+                infoRows.push({ label: "Date of Birth", value: u.dob ? formatDob(u.dob, u.hideYear ?? true) : "—", icon: "calendar-outline" });
+              } else {
+                infoRows.push({ label: "Staff ID", value: u.staffId ?? "—", icon: "id-card-outline" });
+                infoRows.push({ label: "Sub-role", value: u.subRole ? (SUB_ROLE_LABELS[u.subRole as AdminSubRole] ?? u.subRole) : "—", icon: "ribbon-outline" });
+              }
+
+              infoRows.push({ label: "Department", value: u.department, icon: "business-outline" });
+              infoRows.push({ label: "Phone", value: u.phone || "—", icon: "call-outline" });
+              infoRows.push({ label: "Email", value: u.email || "—", icon: "mail-outline" });
+
+              if (isStudent && u.status) {
+                infoRows.push({ label: "Status", value: u.status.charAt(0).toUpperCase() + u.status.slice(1), icon: "ellipse-outline" });
+              }
+
+              return (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+                  {/* Header */}
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 }}>
+                    <View style={[detail.bigAvatar, { backgroundColor: roleColor + "20" }]}>
+                      <Text style={[detail.bigAvatarText, { color: roleColor }]}>
+                        {u.firstName[0]}{u.surname[0]}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 19, fontFamily: "Inter_700Bold", color: colors.foreground }}>
+                        {u.firstName} {u.surname}
+                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 5 }}>
+                        <View style={[{ paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8, backgroundColor: roleColor + "18" }]}>
+                          <Text style={{ fontSize: 12, fontFamily: "Inter_700Bold", color: roleColor }}>{roleLabel}</Text>
+                        </View>
+                      </View>
+                    </View>
+                    <TouchableOpacity onPress={() => setDetailUser(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close" size={22} color={colors.mutedForeground} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Info rows */}
+                  {infoRows.map((row, i) => (
+                    <View
+                      key={row.label}
+                      style={{
+                        flexDirection: "row", alignItems: "center", gap: 12,
+                        paddingVertical: 13,
+                        borderBottomWidth: i < infoRows.length - 1 ? 1 : 0,
+                        borderBottomColor: colors.border,
+                      }}
+                    >
+                      <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.muted, alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name={row.icon} size={16} color={roleColor} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: colors.mutedForeground, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                          {row.label}
+                        </Text>
+                        <Text style={{ fontSize: 14, fontFamily: "Inter_400Regular", color: colors.foreground, marginTop: 2 }}>
+                          {row.value}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+
+                  <TouchableOpacity
+                    style={{ marginTop: 24, borderRadius: 14, paddingVertical: 14, backgroundColor: colors.muted, alignItems: "center" }}
+                    onPress={() => setDetailUser(null)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={{ fontSize: 15, fontFamily: "Inter_700Bold", color: colors.foreground }}>Close</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              );
+            })()}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Add Admin Modal ── */}
       <Modal visible={showForm} transparent animationType="slide" statusBarTranslucent onRequestClose={() => { resetForm(); setShowForm(false); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
@@ -191,7 +297,6 @@ export default function UsersScreen() {
           <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-            {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View>
                 <Text style={[styles.modalTitle, { color: colors.foreground }]}>Add New Admin</Text>
@@ -205,7 +310,6 @@ export default function UsersScreen() {
             </View>
 
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-              {/* Name row */}
               <View style={styles.fieldRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.label, { color: colors.mutedForeground }]}>First Name</Text>
@@ -231,7 +335,6 @@ export default function UsersScreen() {
                 </View>
               </View>
 
-              {/* Staff ID */}
               <Text style={[styles.label, { color: colors.mutedForeground }]}>Staff ID</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
@@ -242,7 +345,6 @@ export default function UsersScreen() {
                 autoCapitalize="characters"
               />
 
-              {/* Sub-role picker */}
               <Text style={[styles.label, { color: colors.mutedForeground }]}>Sub-role</Text>
               <View style={styles.subRoleRow}>
                 {SUB_ROLES.map((r) => (
@@ -263,7 +365,6 @@ export default function UsersScreen() {
                 ))}
               </View>
 
-              {/* Phone */}
               <Text style={[styles.label, { color: colors.mutedForeground }]}>Phone</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
@@ -274,7 +375,6 @@ export default function UsersScreen() {
                 keyboardType="phone-pad"
               />
 
-              {/* Email */}
               <Text style={[styles.label, { color: colors.mutedForeground }]}>Email (optional)</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
@@ -286,7 +386,6 @@ export default function UsersScreen() {
                 autoCapitalize="none"
               />
 
-              {/* Password */}
               <Text style={[styles.label, { color: colors.mutedForeground }]}>Password</Text>
               <View style={[styles.passWrap, { backgroundColor: colors.muted, borderColor: colors.border }]}>
                 <TextInput
@@ -309,7 +408,6 @@ export default function UsersScreen() {
                 </View>
               ) : null}
 
-              {/* Create button */}
               <TouchableOpacity
                 style={[styles.createBtn, { backgroundColor: colors.primary }]}
                 onPress={handleCreate}
@@ -329,6 +427,14 @@ export default function UsersScreen() {
     </View>
   );
 }
+
+const detail = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  sheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, maxHeight: "88%" },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 20 },
+  bigAvatar: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
+  bigAvatarText: { fontSize: 20, fontFamily: "Inter_700Bold" },
+});
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 20 },
