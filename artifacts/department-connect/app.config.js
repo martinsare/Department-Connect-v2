@@ -18,7 +18,14 @@ module.exports = {
     ios: {
       supportsTablet: false,
     },
-    android: {},
+    android: {
+      package: "com.departmentconnect.app",
+      versionCode: 1,
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/icon.png",
+        backgroundColor: "#2D1B69",
+      },
+    },
     web: {
       favicon: "./assets/images/icon.png",
     },
