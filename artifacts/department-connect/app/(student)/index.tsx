@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import EmptyClassesIllustration from "@/components/illustrations/EmptyClassesIllustration";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -65,7 +66,7 @@ export default function StudentHome() {
       >
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>{greeting} 👋</Text>
+            <Text style={styles.greeting}>{greeting}</Text>
             <Text style={styles.name}>{firstName}</Text>
           </View>
           <TouchableOpacity
@@ -156,7 +157,7 @@ export default function StudentHome() {
 
         {todayClasses.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={styles.emptyEmoji}>🎉</Text>
+            <EmptyClassesIllustration size={140} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No classes today</Text>
             <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>Enjoy your free day!</Text>
           </View>

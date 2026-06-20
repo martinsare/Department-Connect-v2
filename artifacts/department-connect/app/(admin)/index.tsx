@@ -190,7 +190,10 @@ export default function AdminDashboard() {
 
         {pendingStudents.length > 0 && (
           <>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>⏳ Pending Approvals</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 20, marginBottom: 12 }}>
+              <Ionicons name="time-outline" size={16} color={colors.warning} />
+              <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 0, marginBottom: 0 }]}>Pending Approvals</Text>
+            </View>
             {pendingStudents.slice(0, 3).map((s) => (
               <View key={s.id} style={[styles.pendingCard, { backgroundColor: "#FEF3C7", borderColor: "#FCD34D" }]}>
                 <View style={[styles.pendingAvatar, { backgroundColor: "#F59E0B20" }]}>

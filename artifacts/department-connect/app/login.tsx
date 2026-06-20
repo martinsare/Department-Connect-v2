@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useAuth } from "@/context/AuthContext";
@@ -140,9 +141,9 @@ export default function LoginScreen() {
             <Text style={styles.demoTitle}>Demo Credentials  (password: "password")</Text>
             <View style={styles.demoRow}>
               {[
-                { role: "Student", hint: "Adeyemi", icon: "🎓" },
-                { role: "Admin", hint: "Ibrahim", icon: "🛡️" },
-                { role: "Dev", hint: "Martins", icon: "💻" },
+                { role: "Student", hint: "Adeyemi", icon: "school-outline" as const },
+                { role: "Admin", hint: "Ibrahim", icon: "shield-checkmark-outline" as const },
+                { role: "Dev", hint: "Martins", icon: "code-slash-outline" as const },
               ].map((d) => (
                 <TouchableOpacity
                   key={d.role}
@@ -154,7 +155,7 @@ export default function LoginScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                 >
-                  <Text style={styles.demoChipIcon}>{d.icon}</Text>
+                  <Ionicons name={d.icon} size={18} color="#7C3AED" />
                   <Text style={styles.demoChipLabel}>{d.role}</Text>
                   <Text style={styles.demoChipValue}>{d.hint}</Text>
                 </TouchableOpacity>
