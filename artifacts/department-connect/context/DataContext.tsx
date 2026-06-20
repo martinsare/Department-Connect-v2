@@ -592,6 +592,7 @@ interface DataContextValue {
   announcements: Announcement[];
   auditLogs: AuditLog[];
   markNotificationRead: (id: string) => void;
+  deleteNotification: (id: string) => void;
   approveStudent: (id: string) => void;
   rejectStudent: (id: string, reason: string) => void;
   classAttendees: Record<string, ClassAttendee[]>;
@@ -621,6 +622,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
+  };
+
+  const deleteNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
   const approveStudent = (id: string) => {
@@ -718,6 +723,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         announcements,
         auditLogs: AUDIT_LOGS,
         markNotificationRead,
+        deleteNotification,
         approveStudent,
         rejectStudent,
         classAttendees,

@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import {
+  Alert,
   FlatList,
+  Modal,
   Platform,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -39,11 +42,25 @@ const CATEGORY_COLORS: Record<NotificationCategory, string> = {
   extras: "#10B981",
 };
 
+const PREFS_LABELS: Record<NotificationCategory, { label: string; desc: string }> = {
+  lectures: { label: "Lectures", desc: "Class schedules, attendance alerts, cancellations" },
+  big_events: { label: "Big Events", desc: "Department-wide events and major occasions" },
+  small_events: { label: "Small Events", desc: "Group activities, study sessions, meetings" },
+  extras: { label: "Extras & Financials", desc: "Payments, birthdays, announcements, reminders" },
+};
+
 export default function NotificationsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { notifications, markNotificationRead } = useData();
+  const { notifications, markNotificationRead, deleteNotification } = useData();
   const [activeTab, setActiveTab] = useState<Tab>("all");
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [prefs, setPrefs] = useState<Record<NotificationCategory, boolean>>({
+    lectures: true,
+    big_events: true,
+    small_events: true,
+    extras: true,
+  });
 
   const filtered =
     activeTab === "all"
@@ -55,6 +72,25 @@ export default function NotificationsScreen() {
       ? notifications.filter((n) => !n.isRead).length
       : notifications.filter((n) => n.category === cat && !n.isRead).length;
 
+  const handleLongPress = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      "Delete Notification",
+      "Remove this notification from your inbox?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteNotification(id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  };
+
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   return (
@@ -63,7 +99,19 @@ export default function NotificationsScreen() {
         colors={[colors.gradientStart, colors.gradientEnd]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
-        <Text style={styles.title}>Inbox</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Inbox</Text>
+          <TouchableOpacity
+            style={styles.settingsBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowPrefs(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="settings-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
         <View style={styles.tabsScroll}>
           <FlatList
             horizontal
@@ -127,6 +175,8 @@ export default function NotificationsScreen() {
                 markNotificationRead(n.id);
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
+              onLongPress={() => handleLongPress(n.id)}
+              delayLongPress={400}
               activeOpacity={0.85}
             >
               <View style={[styles.iconCircle, { backgroundColor: catColor + "20" }]}>
@@ -160,13 +210,63 @@ export default function NotificationsScreen() {
           );
         }}
       />
+
+      <Modal visible={showPrefs} transparent animationType="slide" onRequestClose={() => setShowPrefs(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.prefsSheet, { backgroundColor: colors.card }]}>
+            <View style={[styles.prefsHandle, { backgroundColor: colors.border }]} />
+            <View style={styles.prefsHeader}>
+              <Text style={[styles.prefsTitle, { color: colors.foreground }]}>Notification Preferences</Text>
+              <TouchableOpacity onPress={() => setShowPrefs(false)}>
+                <Ionicons name="close" size={22} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.prefsSub, { color: colors.mutedForeground }]}>
+              Choose which notifications you receive. Some alerts (class cancellations, payment deadlines) cannot be disabled.
+            </Text>
+            {(Object.keys(PREFS_LABELS) as NotificationCategory[]).map((cat) => {
+              const { label, desc } = PREFS_LABELS[cat];
+              const color = CATEGORY_COLORS[cat];
+              return (
+                <View
+                  key={cat}
+                  style={[styles.prefsRow, { borderBottomColor: colors.border }]}
+                >
+                  <View style={[styles.prefsCatIcon, { backgroundColor: color + "20" }]}>
+                    <Ionicons name={CATEGORY_ICONS[cat]} size={16} color={color} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.prefsCatLabel, { color: colors.foreground }]}>{label}</Text>
+                    <Text style={[styles.prefsCatDesc, { color: colors.mutedForeground }]}>{desc}</Text>
+                  </View>
+                  <Switch
+                    value={prefs[cat]}
+                    onValueChange={(v) => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setPrefs((p) => ({ ...p, [cat]: v }));
+                    }}
+                    trackColor={{ false: colors.border, true: color }}
+                    thumbColor="#fff"
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 16 },
-  title: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#fff", marginBottom: 16 },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  title: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#fff" },
+  settingsBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center", justifyContent: "center",
+  },
   tabsScroll: { marginBottom: 0 },
   tab: {
     flexDirection: "row",
@@ -219,4 +319,14 @@ const styles = StyleSheet.create({
   unreadDot: { width: 8, height: 8, borderRadius: 4, marginTop: 4 },
   highBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   highBadgeText: { fontSize: 10, fontFamily: "Inter_700Bold", color: "#DC2626" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  prefsSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 40 },
+  prefsHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
+  prefsHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  prefsTitle: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  prefsSub: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18, marginBottom: 20 },
+  prefsRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, borderBottomWidth: 1 },
+  prefsCatIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  prefsCatLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  prefsCatDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
 });

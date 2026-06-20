@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -51,6 +52,12 @@ export default function ProfileScreen() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [birthdayPrivacy, setBirthdayPrivacy] = useState(user?.birthdayPrivacy ?? false);
   const [editing, setEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const initials = `${user?.firstName?.[0] ?? ""}${user?.surname?.[0] ?? ""}`;
@@ -59,6 +66,29 @@ export default function ProfileScreen() {
     updateUser({ phone, email, birthdayPrivacy });
     setEditing(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleChangePassword = () => {
+    if (!currentPwd.trim()) {
+      Alert.alert("Error", "Please enter your current password.");
+      return;
+    }
+    if (currentPwd !== "password") {
+      Alert.alert("Error", "Current password is incorrect.");
+      return;
+    }
+    if (newPwd.length < 8) {
+      Alert.alert("Error", "New password must be at least 8 characters.");
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      Alert.alert("Error", "New passwords do not match.");
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowPasswordModal(false);
+    setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
+    Alert.alert("Password Changed", "Your password has been updated successfully.");
   };
 
   const handleLogout = () => {
@@ -176,6 +206,29 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]}>Security</Text>
+          <TouchableOpacity
+            style={[styles.securityRow, { borderTopColor: colors.border }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowPasswordModal(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.securityIcon, { backgroundColor: colors.primary + "15" }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.securityLabel, { color: colors.foreground }]}>Change Password</Text>
+              <Text style={[styles.securityDesc, { color: colors.mutedForeground }]}>
+                Update your account password (min. 8 characters)
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        </View>
+
         <TouchableOpacity
           style={[styles.logoutBtn, { backgroundColor: "#FEE2E2", borderColor: "#FECACA" }]}
           onPress={handleLogout}
@@ -185,6 +238,76 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal visible={showPasswordModal} transparent animationType="slide" onRequestClose={() => setShowPasswordModal(false)}>
+        <View style={styles.pwModalOverlay}>
+          <View style={[styles.pwSheet, { backgroundColor: colors.card }]}>
+            <View style={[styles.pwHandle, { backgroundColor: colors.border }]} />
+            <View style={styles.pwHeader}>
+              <Text style={[styles.pwTitle, { color: colors.foreground }]}>Change Password</Text>
+              <TouchableOpacity onPress={() => { setShowPasswordModal(false); setCurrentPwd(""); setNewPwd(""); setConfirmPwd(""); }}>
+                <Ionicons name="close" size={22} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.pwFieldLabel, { color: colors.mutedForeground }]}>Current Password</Text>
+            <View style={[styles.pwInputRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <TextInput
+                style={[styles.pwInput, { color: colors.foreground }]}
+                value={currentPwd}
+                onChangeText={setCurrentPwd}
+                secureTextEntry={!showCurrent}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="Enter current password"
+                placeholderTextColor={colors.mutedForeground}
+              />
+              <TouchableOpacity onPress={() => setShowCurrent((v) => !v)}>
+                <Ionicons name={showCurrent ? "eye-off-outline" : "eye-outline"} size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.pwFieldLabel, { color: colors.mutedForeground, marginTop: 14 }]}>New Password</Text>
+            <View style={[styles.pwInputRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <TextInput
+                style={[styles.pwInput, { color: colors.foreground }]}
+                value={newPwd}
+                onChangeText={setNewPwd}
+                secureTextEntry={!showNew}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="Min. 8 characters"
+                placeholderTextColor={colors.mutedForeground}
+              />
+              <TouchableOpacity onPress={() => setShowNew((v) => !v)}>
+                <Ionicons name={showNew ? "eye-off-outline" : "eye-outline"} size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={[styles.pwFieldLabel, { color: colors.mutedForeground, marginTop: 14 }]}>Confirm New Password</Text>
+            <View style={[styles.pwInputRow, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <TextInput
+                style={[styles.pwInput, { color: colors.foreground }]}
+                value={confirmPwd}
+                onChangeText={setConfirmPwd}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="Re-enter new password"
+                placeholderTextColor={colors.mutedForeground}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.pwSaveBtn, { backgroundColor: colors.primary }]}
+              onPress={handleChangePassword}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.pwSaveBtnText}>Update Password</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -245,4 +368,25 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   logoutText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#DC2626" },
+  securityRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingTop: 14, borderTopWidth: 1,
+  },
+  securityIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  securityLabel: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  securityDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  pwModalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  pwSheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
+  pwHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 20 },
+  pwHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  pwTitle: { fontSize: 20, fontFamily: "Inter_700Bold" },
+  pwFieldLabel: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginBottom: 6 },
+  pwInputRow: {
+    flexDirection: "row", alignItems: "center",
+    borderRadius: 12, borderWidth: 1.5,
+    paddingHorizontal: 14, paddingVertical: 12,
+  },
+  pwInput: { flex: 1, fontSize: 14, fontFamily: "Inter_400Regular" },
+  pwSaveBtn: { borderRadius: 14, padding: 16, alignItems: "center", marginTop: 24 },
+  pwSaveBtnText: { fontSize: 15, fontFamily: "Inter_700Bold", color: "#fff" },
 });

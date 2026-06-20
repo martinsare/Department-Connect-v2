@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/context/AuthContext";
+import { router } from "expo-router";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -64,7 +65,7 @@ const CATEGORIES = ["Academic", "Administrative", "Financial", "Social", "Urgent
 export default function AdminDashboard() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user, logout, allUsers } = useAuth();
   const { students, classes, announcements, contributions, events, addAnnouncement } = useData();
   const [showAnnounce, setShowAnnounce] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -78,7 +79,7 @@ export default function AdminDashboard() {
   const activeStudents = students.filter((s) => s.status === "active").length;
   const pendingStudents = students.filter((s) => s.status === "pending");
   const todayClasses = classes.filter((c) => c.date === "2026-06-20");
-  const totalAdmins = 3;
+  const totalAdmins = allUsers.filter((u) => u.role === "admin").length;
 
   const totalAttended = classes.reduce((s, c) => s + c.attendanceCount, 0);
   const totalCapacity = classes.length * 25;
@@ -170,6 +171,7 @@ export default function AdminDashboard() {
             icon="hourglass-outline"
             color={pendingStudents.length > 0 ? "#F59E0B" : "#10B981"}
             sub={pendingStudents.length > 0 ? "Tap to review" : "All clear"}
+            onPress={pendingStudents.length > 0 ? () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push("/(admin)/approvals"); } : undefined}
           />
           <StatCard label="Admin Users" value={totalAdmins} icon="shield-outline" color="#8B5CF6" />
           <StatCard

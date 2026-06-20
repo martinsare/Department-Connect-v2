@@ -24,6 +24,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [holdingState, setHoldingState] = useState<"pending" | "rejected" | null>(null);
 
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -52,13 +53,53 @@ export default function LoginScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const result = await login(identifier.trim(), password);
     if (!result.success) {
-      setError(result.error ?? "Invalid credentials");
+      const msg = result.error ?? "Invalid credentials";
+      if (msg.includes("pending approval")) {
+        setHoldingState("pending");
+      } else if (msg.includes("rejected")) {
+        setHoldingState("rejected");
+      } else {
+        setError(msg);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 24);
   const botPad = insets.bottom + (Platform.OS === "web" ? 34 : 0) + 24;
+
+  if (holdingState) {
+    const isPending = holdingState === "pending";
+    return (
+      <LinearGradient colors={["#0D0720", "#2D1B69", "#7C3AED"]} style={[styles.gradient, { alignItems: "center", justifyContent: "center", padding: 24 }]}>
+        <View style={styles.holdingCard}>
+          <View style={[styles.holdingIconCircle, { backgroundColor: isPending ? "#FEF3C720" : "#FEE2E220" }]}>
+            <Ionicons
+              name={isPending ? "hourglass-outline" : "close-circle-outline"}
+              size={48}
+              color={isPending ? "#F59E0B" : "#EF4444"}
+            />
+          </View>
+          <Text style={styles.holdingTitle}>
+            {isPending ? "Account Pending Approval" : "Account Rejected"}
+          </Text>
+          <Text style={styles.holdingBody}>
+            {isPending
+              ? "Your account is currently pending approval by your Lecturer or Course Representative. You will be notified once approved."
+              : "Your account was rejected. Please contact your Admin for more information and to resubmit your details."}
+          </Text>
+          <TouchableOpacity
+            style={styles.holdingBackBtn}
+            onPress={() => { setHoldingState(null); setIdentifier(""); setPassword(""); }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="arrow-back" size={16} color="#fff" />
+            <Text style={styles.holdingBackText}>Back to Login</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient colors={["#0D0720", "#2D1B69", "#7C3AED"]} style={styles.gradient}>
@@ -263,4 +304,35 @@ const styles = StyleSheet.create({
   demoChipLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: "#64748B" },
   demoChipValue: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   demoHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#CBD5E1", textAlign: "center", marginTop: 8 },
+  holdingCard: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    padding: 32,
+    alignItems: "center",
+    gap: 16,
+    width: "100%",
+  },
+  holdingIconCircle: {
+    width: 96, height: 96, borderRadius: 48,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
+  },
+  holdingTitle: {
+    fontSize: 22, fontFamily: "Inter_700Bold",
+    color: "#fff", textAlign: "center",
+  },
+  holdingBody: {
+    fontSize: 14, fontFamily: "Inter_400Regular",
+    color: "rgba(255,255,255,0.75)",
+    textAlign: "center", lineHeight: 22,
+  },
+  holdingBackBtn: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 14, paddingHorizontal: 20, paddingVertical: 12,
+    marginTop: 8, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
+  },
+  holdingBackText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
 });
