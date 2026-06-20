@@ -135,7 +135,7 @@ export default function StudentsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
-        colors={["#0D2B7E", "#1B4FD8"]}
+        colors={["#2D1B69", "#7C3AED"]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <View style={styles.headerRow}>
@@ -151,7 +151,7 @@ export default function StudentsScreen() {
             }}
             activeOpacity={0.85}
           >
-            <Ionicons name="person-add-outline" size={18} color="#1B4FD8" />
+            <Ionicons name="person-add-outline" size={18} color="#7C3AED" />
             <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity>
         </View>
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8,
   },
-  addBtnText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#1B4FD8" },
+  addBtnText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   searchBar: {
     flexDirection: "row", alignItems: "center", backgroundColor: "#fff",
     borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, gap: 10,

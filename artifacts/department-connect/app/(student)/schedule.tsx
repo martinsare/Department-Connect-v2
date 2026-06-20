@@ -132,9 +132,9 @@ const styles = StyleSheet.create({
   },
   dayBtnActive: { backgroundColor: "#fff" },
   dayLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.6)" },
-  dayLabelActive: { color: "#1B4FD8" },
+  dayLabelActive: { color: "#7C3AED" },
   dateLabel: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#fff", marginTop: 2 },
-  dateLabelActive: { color: "#1B4FD8" },
+  dateLabelActive: { color: "#7C3AED" },
   todayDot: {
     width: 5, height: 5, borderRadius: 2.5,
     backgroundColor: "#F59E0B", marginTop: 3,

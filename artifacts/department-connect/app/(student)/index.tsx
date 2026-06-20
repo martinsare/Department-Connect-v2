@@ -1,8 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Animated,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,117 +17,19 @@ import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useColors } from "@/hooks/useColors";
 
-function StatPill({
-  label,
-  value,
-  color,
-  icon,
-}: {
-  label: string;
-  value: string;
-  color: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}) {
-  return (
-    <View style={[statStyles.pill, { backgroundColor: color + "18" }]}>
-      <Ionicons name={icon} size={18} color={color} />
-      <Text style={[statStyles.value, { color }]}>{value}</Text>
-      <Text style={statStyles.label}>{label}</Text>
-    </View>
-  );
-}
-
-const statStyles = StyleSheet.create({
-  pill: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 14,
-    alignItems: "center",
-    gap: 4,
-  },
-  value: { fontSize: 18, fontFamily: "Inter_700Bold" },
-  label: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#64748B", textAlign: "center" },
-});
-
-function ClassItem({ cls, onScan }: { cls: any; onScan?: () => void }) {
-  const colors = useColors();
-  const statusColors: Record<string, string> = {
-    completed: colors.mutedForeground,
-    ongoing: colors.success,
-    upcoming: colors.primary,
-    cancelled: colors.destructive,
-  };
-  const statusLabels: Record<string, string> = {
-    completed: "Done",
-    ongoing: "Live",
-    upcoming: "Soon",
-    cancelled: "Cancelled",
-  };
-  const col = statusColors[cls.status] ?? colors.mutedForeground;
-  return (
-    <View style={[classStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={[classStyles.dot, { backgroundColor: col }]} />
-      <View style={classStyles.info}>
-        <Text style={[classStyles.code, { color: colors.primary }]}>{cls.courseCode}</Text>
-        <Text style={[classStyles.name, { color: colors.foreground }]} numberOfLines={1}>{cls.courseName}</Text>
-        <Text style={[classStyles.meta, { color: colors.mutedForeground }]}>
-          {cls.startTime} – {cls.endTime}  ·  {cls.venue}
-        </Text>
-      </View>
-      <View style={classStyles.right}>
-        <View style={[classStyles.badge, { backgroundColor: col + "20" }]}>
-          <Text style={[classStyles.badgeText, { color: col }]}>{statusLabels[cls.status]}</Text>
-        </View>
-        {cls.attendanceOpen && onScan && (
-          <TouchableOpacity
-            style={[classStyles.scanBtn, { backgroundColor: colors.primary }]}
-            onPress={onScan}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="qr-code-outline" size={14} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
-}
-
-const classStyles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    gap: 12,
-    marginBottom: 10,
-  },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  info: { flex: 1 },
-  code: { fontSize: 12, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
-  name: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 1 },
-  meta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
-  right: { alignItems: "flex-end", gap: 8 },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  badgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
-  scanBtn: { padding: 6, borderRadius: 8 },
-});
-
 export default function StudentHome() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { classes, contributions, events, announcements, attendanceS1, attendedClasses, markAttendance } = useData();
-  const [scanSuccess, setScanSuccess] = React.useState(false);
+  const { classes, contributions, events, announcements, attendedClasses, markAttendance } = useData();
+  const [scanSuccess, setScanSuccess] = useState(false);
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const todayClasses = classes.filter((c) => c.date === "2026-06-20");
-  const overallAtt = Math.round(
-    attendanceS1.reduce((s, r) => s + r.percentage, 0) / attendanceS1.length
-  );
+  const nextClass = todayClasses.find((c) => c.status === "ongoing" || c.status === "upcoming");
   const unpaidContributions = contributions.filter((c) => c.status === "unpaid");
   const totalOwed = unpaidContributions.reduce((s, c) => s + c.amount, 0);
-  const upcomingEvents = events.filter((e) => e.date >= "2026-06-20");
+  const upcomingEvents = events.filter((e) => e.date >= "2026-06-20").slice(0, 4);
 
   const handleScanQR = (classId: string) => {
     if (attendedClasses.includes(classId)) return;
@@ -140,179 +41,313 @@ export default function StudentHome() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const initials = `${user?.firstName?.[0] ?? ""}${user?.surname?.[0] ?? ""}`;
+  const firstName = user?.firstName ?? "";
+
+  const statusColor: Record<string, string> = {
+    completed: colors.mutedForeground,
+    ongoing: "#10B981",
+    upcoming: colors.primary,
+    cancelled: "#EF4444",
+  };
+  const statusLabel: Record<string, string> = {
+    completed: "Completed",
+    ongoing: "● Live now",
+    upcoming: "Upcoming",
+    cancelled: "Cancelled",
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Header */}
       <LinearGradient
-        colors={[colors.gradientStart, colors.gradientEnd]}
-        style={[styles.header, { paddingTop: topPad + 20 }]}
+        colors={["#2D1B69", "#7C3AED"]}
+        style={[styles.header, { paddingTop: topPad + 16 }]}
       >
         <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.greeting}>{greeting},</Text>
-            <Text style={styles.name}>{user?.firstName} {user?.surname}</Text>
-            <Text style={styles.matric}>{user?.matricNumber}  ·  {user?.level}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>{greeting} 👋</Text>
+            <Text style={styles.name}>{firstName}</Text>
           </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => router.push("/(student)/profile")}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.avatarText}>
+              {(user?.firstName?.[0] ?? "")}{(user?.surname?.[0] ?? "")}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.statRow}>
-          <StatPill label="Attendance" value={`${overallAtt}%`} color="#34D399" icon="checkmark-circle" />
-          <StatPill label="Owed" value={totalOwed > 0 ? `₦${totalOwed.toLocaleString()}` : "Nil"} color={totalOwed > 0 ? "#F59E0B" : "#34D399"} icon="card-outline" />
-          <StatPill label="Classes" value={`${todayClasses.length}`} color="#60A5FA" icon="calendar" />
+        {/* Quick Stats */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>{todayClasses.length}</Text>
+            <Text style={styles.statLabel}>Classes today</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statNum, { color: unpaidContributions.length > 0 ? "#FCD34D" : "#34D399" }]}>
+              {unpaidContributions.length > 0 ? `₦${(totalOwed / 1000).toFixed(0)}k` : "Nil"}
+            </Text>
+            <Text style={styles.statLabel}>Amount owed</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNum}>{upcomingEvents.length}</Text>
+            <Text style={styles.statLabel}>Events ahead</Text>
+          </View>
         </View>
       </LinearGradient>
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + (Platform.OS === "web" ? 84 : 90) }]}
+        contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + (Platform.OS === "web" ? 100 : 100) }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Scan success */}
         {scanSuccess && (
-          <View style={[styles.successBanner, { backgroundColor: colors.success }]}>
+          <View style={[styles.successBanner, { backgroundColor: "#10B981" }]}>
             <Ionicons name="checkmark-circle" size={18} color="#fff" />
-            <Text style={styles.successText}>Attendance marked successfully!</Text>
+            <Text style={styles.successText}>Attendance marked!</Text>
           </View>
         )}
 
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Today's Classes</Text>
+        {/* Outstanding Dues Banner */}
+        {unpaidContributions.length > 0 && (
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/(student)/payments");
+            }}
+          >
+            <LinearGradient
+              colors={["#92400E", "#D97706"]}
+              style={styles.duesBanner}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <View style={styles.duesBannerLeft}>
+                <View style={styles.duesBannerIcon}>
+                  <Ionicons name="warning-outline" size={20} color="#D97706" />
+                </View>
+                <View>
+                  <Text style={styles.duesBannerTitle}>
+                    {unpaidContributions.length} unpaid contribution{unpaidContributions.length > 1 ? "s" : ""}
+                  </Text>
+                  <Text style={styles.duesBannerSub}>
+                    Total: ₦{totalOwed.toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.duesBannerBtn}>
+                <Text style={styles.duesBannerBtnText}>Pay Now</Text>
+                <Ionicons name="arrow-forward" size={14} color="#D97706" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+
+        {/* Next / Current Class */}
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+          {nextClass ? (nextClass.status === "ongoing" ? "Current Class" : "Next Class") : "Today's Classes"}
+        </Text>
+
         {todayClasses.length === 0 ? (
-          <View style={[styles.emptyCard, { backgroundColor: colors.card }]}>
-            <Ionicons name="calendar-outline" size={32} color={colors.mutedForeground} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No classes today</Text>
+          <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={styles.emptyEmoji}>🎉</Text>
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No classes today</Text>
+            <Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>Enjoy your free day!</Text>
+          </View>
+        ) : nextClass ? (
+          <View style={[styles.classHeroCard, { backgroundColor: colors.card, borderColor: nextClass.status === "ongoing" ? "#10B981" : colors.primary }]}>
+            <View style={styles.classHeroTop}>
+              <View style={[styles.classStatusBadge, { backgroundColor: (statusColor[nextClass.status] ?? colors.primary) + "20" }]}>
+                <Text style={[styles.classStatusText, { color: statusColor[nextClass.status] ?? colors.primary }]}>
+                  {statusLabel[nextClass.status]}
+                </Text>
+              </View>
+              {nextClass.attendanceOpen && !attendedClasses.includes(nextClass.id) && (
+                <TouchableOpacity
+                  style={styles.scanBtn}
+                  onPress={() => handleScanQR(nextClass.id)}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="qr-code-outline" size={15} color="#fff" />
+                  <Text style={styles.scanBtnText}>Mark Present</Text>
+                </TouchableOpacity>
+              )}
+              {attendedClasses.includes(nextClass.id) && (
+                <View style={[styles.attendedBadge, { backgroundColor: "#10B98120" }]}>
+                  <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+                  <Text style={[styles.attendedText, { color: "#10B981" }]}>Attended</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.classHeroCourse, { color: colors.primary }]}>{nextClass.courseCode}</Text>
+            <Text style={[styles.classHeroName, { color: colors.foreground }]}>{nextClass.courseName}</Text>
+            <View style={styles.classHeroMeta}>
+              <View style={styles.classMetaItem}>
+                <Ionicons name="time-outline" size={14} color={colors.mutedForeground} />
+                <Text style={[styles.classMetaText, { color: colors.mutedForeground }]}>
+                  {nextClass.startTime} – {nextClass.endTime}
+                </Text>
+              </View>
+              <View style={styles.classMetaItem}>
+                <Ionicons name="location-outline" size={14} color={colors.mutedForeground} />
+                <Text style={[styles.classMetaText, { color: colors.mutedForeground }]}>{nextClass.venue}</Text>
+              </View>
+            </View>
           </View>
         ) : (
           todayClasses.map((cls) => (
-            <ClassItem
-              key={cls.id}
-              cls={cls}
-              onScan={cls.attendanceOpen && !attendedClasses.includes(cls.id) ? () => handleScanQR(cls.id) : undefined}
-            />
+            <View key={cls.id} style={[styles.classRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.classRowDot, { backgroundColor: statusColor[cls.status] ?? colors.mutedForeground }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.classRowCode, { color: colors.primary }]}>{cls.courseCode}</Text>
+                <Text style={[styles.classRowName, { color: colors.foreground }]}>{cls.courseName}</Text>
+                <Text style={[styles.classRowMeta, { color: colors.mutedForeground }]}>{cls.startTime} · {cls.venue}</Text>
+              </View>
+              <Text style={[styles.classRowStatus, { color: statusColor[cls.status] ?? colors.mutedForeground }]}>
+                {statusLabel[cls.status]}
+              </Text>
+            </View>
           ))
         )}
 
-        {unpaidContributions.length > 0 && (
+        {/* Upcoming Events */}
+        {upcomingEvents.length > 0 && (
           <>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Outstanding Dues</Text>
-            {unpaidContributions.map((c) => (
-              <View key={c.id} style={[styles.duesCard, { backgroundColor: "#FFF7ED", borderColor: "#FED7AA" }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.duesTitle, { color: "#92400E" }]}>{c.title}</Text>
-                  <Text style={styles.duesMeta}>Due: {c.deadline}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Upcoming Events</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll}>
+              {upcomingEvents.map((ev) => (
+                <View key={ev.id} style={[styles.eventChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={[styles.eventChipDot, { backgroundColor: ev.category === "big_event" ? "#F59E0B" : colors.primary }]} />
+                  <Text style={[styles.eventChipTitle, { color: colors.foreground }]} numberOfLines={2}>{ev.title}</Text>
+                  <Text style={[styles.eventChipMeta, { color: colors.mutedForeground }]}>{ev.date}</Text>
+                  <Text style={[styles.eventChipVenue, { color: colors.mutedForeground }]} numberOfLines={1}>{ev.venue}</Text>
                 </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.duesAmount}>₦{c.amount.toLocaleString()}</Text>
-                  <TouchableOpacity
-                    style={styles.payBtn}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      router.push("/(student)/payments");
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.payBtnText}>Pay Now</Text>
-                  </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
+
+        {/* Recent Announcements */}
+        {announcements.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Announcements</Text>
+            {announcements.slice(0, 3).map((an) => (
+              <View key={an.id} style={[styles.annoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.annoCategoryDot, { backgroundColor: colors.primary }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.annoTitle, { color: colors.foreground }]}>{an.title}</Text>
+                  <Text style={[styles.annoBody, { color: colors.mutedForeground }]} numberOfLines={2}>{an.body}</Text>
+                  <Text style={[styles.annoMeta, { color: colors.mutedForeground }]}>{an.postedBy}  ·  {an.time}</Text>
                 </View>
               </View>
             ))}
           </>
         )}
-
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Upcoming Events</Text>
-        {upcomingEvents.slice(0, 2).map((ev) => (
-          <View key={ev.id} style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={[styles.eventCategoryDot, { backgroundColor: ev.category === "big_event" ? colors.accent : colors.info }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.eventTitle, { color: colors.foreground }]}>{ev.title}</Text>
-              <Text style={[styles.eventMeta, { color: colors.mutedForeground }]}>{ev.date}  ·  {ev.time}  ·  {ev.venue}</Text>
-            </View>
-          </View>
-        ))}
-
-        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Announcements</Text>
-        {announcements.slice(0, 2).map((an) => (
-          <View key={an.id} style={[styles.annoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.annoTitle, { color: colors.foreground }]}>{an.title}</Text>
-            <Text style={[styles.annoBody, { color: colors.mutedForeground }]} numberOfLines={2}>{an.body}</Text>
-            <Text style={[styles.annoMeta, { color: colors.mutedForeground }]}>{an.postedBy}  ·  {an.time}</Text>
-          </View>
-        ))}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 20, paddingBottom: 24 },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 },
-  greeting: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.7)" },
-  name: { fontSize: 22, fontFamily: "Inter_700Bold", color: "#FFFFFF", marginTop: 2 },
-  matric: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.6)", marginTop: 4 },
+  header: { paddingHorizontal: 20, paddingBottom: 28 },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 24 },
+  greeting: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)" },
+  name: { fontSize: 26, fontFamily: "Inter_700Bold", color: "#FFFFFF", marginTop: 2 },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50, height: 50, borderRadius: 25,
     backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.4)",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "rgba(255,255,255,0.4)",
   },
   avatarText: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#fff" },
-  statRow: { flexDirection: "row", gap: 10 },
-  content: { padding: 16, gap: 0 },
-  sectionTitle: { fontSize: 16, fontFamily: "Inter_700Bold", marginTop: 20, marginBottom: 12 },
-  emptyCard: {
-    borderRadius: 14,
-    padding: 24,
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 10,
-  },
-  emptyText: { fontSize: 14, fontFamily: "Inter_400Regular" },
-  successBanner: {
+  statsRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 18,
+    padding: 16,
+  },
+  statItem: { flex: 1, alignItems: "center" },
+  statNum: { fontSize: 20, fontFamily: "Inter_700Bold", color: "#fff" },
+  statLabel: { fontSize: 11, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.65)", marginTop: 2, textAlign: "center" },
+  statDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.2)" },
+  scroll: { padding: 16, gap: 0 },
+  successBanner: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    borderRadius: 14, padding: 14, marginBottom: 14,
   },
   successText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  duesCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 10,
+  duesBanner: {
+    borderRadius: 18, padding: 16, marginBottom: 20,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
   },
-  duesTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  duesMeta: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#B45309", marginTop: 2 },
-  duesAmount: { fontSize: 18, fontFamily: "Inter_700Bold", color: "#92400E" },
-  payBtn: { backgroundColor: "#F59E0B", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginTop: 6 },
-  payBtnText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 12 },
-  eventCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 10,
+  duesBannerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  duesBannerIcon: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center", justifyContent: "center",
   },
-  eventCategoryDot: { width: 10, height: 10, borderRadius: 5 },
-  eventTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
-  eventMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  duesBannerTitle: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#fff" },
+  duesBannerSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.8)", marginTop: 2 },
+  duesBannerBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "#fff", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+  },
+  duesBannerBtnText: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#D97706" },
+  sectionTitle: { fontSize: 17, fontFamily: "Inter_700Bold", marginTop: 8, marginBottom: 12 },
+  emptyCard: {
+    borderRadius: 20, borderWidth: 1, padding: 32,
+    alignItems: "center", gap: 8, marginBottom: 8,
+  },
+  emptyEmoji: { fontSize: 36 },
+  emptyTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  emptyBody: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  classHeroCard: {
+    borderRadius: 20, borderWidth: 2, padding: 20, marginBottom: 8, gap: 8,
+  },
+  classHeroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
+  classStatusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  classStatusText: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  scanBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#7C3AED", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
+  },
+  scanBtnText: { color: "#fff", fontSize: 12, fontFamily: "Inter_700Bold" },
+  attendedBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  attendedText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  classHeroCourse: { fontSize: 13, fontFamily: "Inter_700Bold", letterSpacing: 0.5 },
+  classHeroName: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  classHeroMeta: { flexDirection: "row", gap: 16, marginTop: 4 },
+  classMetaItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+  classMetaText: { fontSize: 13, fontFamily: "Inter_400Regular" },
+  classRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 8,
+  },
+  classRowDot: { width: 10, height: 10, borderRadius: 5 },
+  classRowCode: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  classRowName: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 1 },
+  classRowMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  classRowStatus: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  hScroll: { marginLeft: -4, marginBottom: 8 },
+  eventChip: {
+    width: 160, borderRadius: 18, borderWidth: 1,
+    padding: 16, gap: 6, marginLeft: 4, marginRight: 4,
+  },
+  eventChipDot: { width: 8, height: 8, borderRadius: 4 },
+  eventChipTitle: { fontSize: 14, fontFamily: "Inter_700Bold", lineHeight: 19 },
+  eventChipMeta: { fontSize: 12, fontFamily: "Inter_600SemiBold", marginTop: 2 },
+  eventChipVenue: { fontSize: 11, fontFamily: "Inter_400Regular" },
   annoCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 10,
+    flexDirection: "row", gap: 12,
+    borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 8,
   },
+  annoCategoryDot: { width: 4, borderRadius: 2, alignSelf: "stretch" },
   annoTitle: { fontSize: 14, fontFamily: "Inter_700Bold", marginBottom: 4 },
   annoBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
   annoMeta: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 6 },

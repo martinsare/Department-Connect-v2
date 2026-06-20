@@ -47,7 +47,7 @@ export default function AnalyticsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
-        colors={["#0D2B7E", "#1B4FD8"]}
+        colors={["#2D1B69", "#7C3AED"]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <Text style={styles.title}>Analytics</Text>

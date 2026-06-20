@@ -60,7 +60,7 @@ export default function LoginScreen() {
   const botPad = insets.bottom + (Platform.OS === "web" ? 34 : 0) + 24;
 
   return (
-    <LinearGradient colors={["#070D1F", "#0D2B7E", "#1B4FD8"]} style={styles.gradient}>
+    <LinearGradient colors={["#0D0720", "#2D1B69", "#7C3AED"]} style={styles.gradient}>
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={[styles.scroll, { paddingTop: topPad, paddingBottom: botPad }]}
         keyboardShouldPersistTaps="handled"
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   eyeBtn: { position: "absolute", right: 12, padding: 4 },
   eyeIcon: { fontSize: 16 },
   btn: {
-    backgroundColor: "#1B4FD8",
+    backgroundColor: "#7C3AED",
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: "center",
@@ -263,6 +263,6 @@ const styles = StyleSheet.create({
   },
   demoChipIcon: { fontSize: 18 },
   demoChipLabel: { fontSize: 10, fontFamily: "Inter_600SemiBold", color: "#64748B" },
-  demoChipValue: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#1B4FD8" },
+  demoChipValue: { fontSize: 12, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   demoHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: "#CBD5E1", textAlign: "center", marginTop: 8 },
 });

@@ -119,7 +119,7 @@ export default function EventsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
-        colors={["#0D2B7E", "#1B4FD8"]}
+        colors={["#2D1B69", "#7C3AED"]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <View style={styles.headerRow}>
@@ -135,7 +135,7 @@ export default function EventsScreen() {
             }}
             activeOpacity={0.85}
           >
-            <Ionicons name="add" size={20} color="#1B4FD8" />
+            <Ionicons name="add" size={20} color="#7C3AED" />
             <Text style={styles.createBtnText}>Create</Text>
           </TouchableOpacity>
         </View>
@@ -515,12 +515,12 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8,
   },
-  createBtnText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#1B4FD8" },
+  createBtnText: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   tabBar: { flexDirection: "row", gap: 8 },
   tabBtn: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)" },
   tabBtnActive: { backgroundColor: "rgba(255,255,255,0.95)" },
   tabBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.7)" },
-  tabBtnTextActive: { color: "#1B4FD8" },
+  tabBtnTextActive: { color: "#7C3AED" },
   content: { padding: 16, gap: 12 },
   empty: { alignItems: "center", paddingTop: 80, gap: 12 },
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular" },

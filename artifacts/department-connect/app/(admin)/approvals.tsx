@@ -38,7 +38,7 @@ export default function ApprovalsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
-        colors={["#0D2B7E", "#1B4FD8"]}
+        colors={["#2D1B69", "#7C3AED"]}
         style={[styles.header, { paddingTop: topPad + 20 }]}
       >
         <Text style={styles.title}>Approvals</Text>
@@ -185,9 +185,9 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
   avatarSmall: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: "#EEF2FF", alignItems: "center", justifyContent: "center",
+    backgroundColor: "#EDE9FE", alignItems: "center", justifyContent: "center",
   },
-  avatarSmallText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#1B4FD8" },
+  avatarSmallText: { fontSize: 16, fontFamily: "Inter_700Bold", color: "#7C3AED" },
   studentName: { fontSize: 15, fontFamily: "Inter_700Bold" },
   studentMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
   daysBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },

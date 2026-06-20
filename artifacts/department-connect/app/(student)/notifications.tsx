@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   tabActive: { backgroundColor: "#fff" },
   tabText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "rgba(255,255,255,0.8)" },
-  tabTextActive: { color: "#1B4FD8" },
+  tabTextActive: { color: "#7C3AED" },
   badge: {
     backgroundColor: "#EF4444",
     borderRadius: 8,
