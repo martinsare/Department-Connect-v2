@@ -43,9 +43,3 @@ externalPort = 3000
 channel = "stable-25_05"
 
 [userenv]
-
-[userenv.shared]
-EXPO_PUBLIC_API_URL = "https://32f45432-dacf-41b5-bd68-fe6002b72014-00-1q9tl174xzfu0.spock.replit.dev/api-server"
-SUPABASE_URL = "https://qujvkykeghuaubqsnbdz.supabase.co"
-JWT_SECRET = "dc_jwt_secret_dept_connect_2026_change_on_vercel"
-SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1anZreWtlZ2h1YXVicXNuYmR6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDk0NzE5OCwiZXhwIjoyMDk2NTIzMTk4fQ.MyMAilOVwmvDRC3POvs2ETYlAkzY4i5D2NljQ8OSrzY"
