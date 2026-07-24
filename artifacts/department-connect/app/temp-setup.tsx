@@ -36,11 +36,6 @@ export default function TempSetup() {
         status: "active",
       });
 
-      // Force-activate the account (status comes back as pending by default)
-      if (res?.user?.id) {
-        await api.patch(`/api/profiles/${res.user.id}`, { status: "active" });
-      }
-
       setResult(`✅ Superadmin created!\n\nLogin with:\n  Surname: ${surname.trim()}\n  Password: ${password}\n\nDelete this page now.`);
     } catch (e: any) {
       setResult(`❌ ${e?.message ?? "Something went wrong"}`);

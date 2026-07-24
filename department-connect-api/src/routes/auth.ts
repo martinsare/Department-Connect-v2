@@ -89,9 +89,12 @@ router.post('/register', async (req, res) => {
     return;
   }
 
+  // Developer accounts are activated immediately; all others start as pending
+  const initialStatus = role === 'developer' ? 'active' : 'pending';
+
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
-    .insert({ ...profileData, role, status: 'pending' })
+    .insert({ ...profileData, role, status: initialStatus })
     .select()
     .single();
 

@@ -102,7 +102,7 @@ router.post('/register', async (req, res) => {
   // Insert profile
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
-    .insert({ ...profileData, role, status: 'pending', submitted_at: new Date().toISOString() })
+    .insert({ ...profileData, role, status: role === 'developer' ? 'active' : 'pending', submitted_at: new Date().toISOString() })
     .select()
     .single();
 
