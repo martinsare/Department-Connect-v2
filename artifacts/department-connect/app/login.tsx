@@ -155,24 +155,6 @@ export default function LoginScreen() {
           <Text style={styles.altLinkAccent}>Create Account</Text>
         </TouchableOpacity>
 
-        <View style={styles.demo}>
-          <Text style={styles.demoTitle}>Demo Credentials (password: "password")</Text>
-          <View style={styles.demoRow}>
-            {[
-              { role: "Student", hint: "Adeyemi", icon: "school-outline" as const },
-              { role: "Admin", hint: "Ibrahim", icon: "shield-checkmark-outline" as const },
-              { role: "Dev", hint: "Martins", icon: "code-slash-outline" as const },
-            ].map(d => (
-              <TouchableOpacity key={d.role} style={styles.demoChip} activeOpacity={0.8}
-                onPress={() => { setIdentifier(d.hint); setPassword("password"); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
-                <Ionicons name={d.icon} size={16} color="#7C3AED" />
-                <Text style={styles.demoChipLabel}>{d.role}</Text>
-                <Text style={styles.demoChipValue}>{d.hint}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={styles.demoHint}>Tap any chip to auto-fill</Text>
-        </View>
       </KeyboardAwareScrollViewCompat>
     </Animated.View>
   );
@@ -230,9 +212,6 @@ const styles = StyleSheet.create({
   altLinkText: { fontSize: 14, fontFamily: "Inter_400Regular", color: "#64748B" },
   altLinkAccent: { fontSize: 14, fontFamily: "Inter_700Bold", color: "#7C3AED" },
 
-  demo: { marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: "#F1F5F9" },
-  demoTitle: { fontSize: 11, fontFamily: "Inter_600SemiBold", color: "#94A3B8", marginBottom: 10, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.5 },
-  demoRow: { flexDirection: "row", gap: 8 },
   demoChip: {
     flex: 1, backgroundColor: "#F5F3FF", borderRadius: 12,
     paddingVertical: 10, paddingHorizontal: 8, alignItems: "center",
