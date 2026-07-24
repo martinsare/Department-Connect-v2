@@ -155,6 +155,11 @@ export default function LoginScreen() {
           <Text style={styles.altLinkAccent}>Create Account</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.altLink} onPress={() => router.push("/temp-setup")} activeOpacity={0.7}>
+          <Text style={styles.altLinkText}>Admin setup? </Text>
+          <Text style={styles.altLinkAccent}>Create Superadmin</Text>
+        </TouchableOpacity>
+
       </KeyboardAwareScrollViewCompat>
     </Animated.View>
   );
