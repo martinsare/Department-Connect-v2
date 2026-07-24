@@ -3,14 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const AUTH_TOKEN_KEY = "dc_auth_token";
 export const AUTH_USER_KEY = "dc_auth_user";
 
-// In Replit dev, EXPO_PUBLIC_DOMAIN is the dev domain (set by workflow).
-// EXPO_PUBLIC_API_URL overrides everything — set this to your Vercel URL in production.
-const DEV_DOMAIN = process.env.EXPO_PUBLIC_DOMAIN;
-export const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ??
-  (DEV_DOMAIN
-    ? `https://${DEV_DOMAIN}/api-server`
-    : "http://localhost:3001");
+export const API_BASE = "https://department-connect-api.vercel.app";
 
 export async function apiRequest<T>(
   path: string,
