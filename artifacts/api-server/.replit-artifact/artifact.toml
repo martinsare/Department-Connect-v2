@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/api-server/"
+title = "API Server"
+version = "1.0.0"
+id = "artifacts/api-server"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/api-server/" ]
+localPort = 22729
+
+[services.development]
+run = "pnpm --filter @workspace/api-server run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/api-server", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/api-server/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22729"
+BASE_PATH = "/api-server/"

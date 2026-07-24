@@ -15,11 +15,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { useData } from "@/context/DataContext";
-import { addRegisteredStudent } from "@/context/registeredStudentsStore";
-import { addRegisteredTeacher, registeredTeachersStore } from "@/context/registeredTeachersStore";
 import { SuccessAnimation } from "@/components/AnimatedStatus";
 import { LEVELS as SEED_LEVELS, DEPARTMENTS as SEED_DEPARTMENTS } from "@/data/seedData";
+import { api } from "@/utils/apiClient";
 
 const LEVELS = [...SEED_LEVELS].filter((l) => l !== "Graduated");
 const DEPARTMENTS = [...SEED_DEPARTMENTS];
@@ -29,7 +27,6 @@ type DoneType = "student" | "teacher";
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
-  const { students, addStudent } = useData();
   const [role, setRole] = useState<Role>("student");
 
   /* Student fields */
@@ -86,24 +83,29 @@ export default function RegisterScreen() {
     if (!password) return setError("Password is required.");
     if (password.length < 6) return setError("Password must be at least 6 characters.");
     if (password !== confirmPassword) return setError("Passwords do not match.");
-    const matricNorm = matric.trim().toUpperCase();
-    if (students.some(s => s.matricNumber.toUpperCase() === matricNorm))
-      return setError("A student with this matric number already exists. Please contact Admin.");
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    const id = `reg_${Date.now()}`;
-    const newStudent = {
-      id, firstName: firstName.trim(), surname: surname.trim(),
-      matricNumber: matricNorm, level, department, phone: phone.trim(),
-      email: email.trim(), dob: dob.trim(), status: "pending" as const,
-      submittedAt: new Date().toISOString(), birthdayPrivacy: false, hideYear: false,
-    };
-    addStudent(newStudent);
-    addRegisteredStudent({ ...newStudent, role: "student", password });
-    setLoading(false);
-    setDone("student");
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      await api.post("/api/auth/register", {
+        role: "student",
+        first_name: firstName.trim(),
+        surname: surname.trim(),
+        matric_number: matric.trim().toUpperCase(),
+        level,
+        department,
+        phone: phone.trim(),
+        email: email.trim(),
+        dob: dob.trim(),
+        password,
+      });
+      setLoading(false);
+      setDone("student");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err?.message ?? "Registration failed. Please try again.");
+    }
   };
 
   const handleTeacherRegister = async () => {
@@ -115,21 +117,28 @@ export default function RegisterScreen() {
     if (!tPassword) return setError("Password is required.");
     if (tPassword.length < 6) return setError("Password must be at least 6 characters.");
     if (tPassword !== tConfirmPassword) return setError("Passwords do not match.");
-    const staffIdNorm = tStaffId.trim().toUpperCase();
-    if (registeredTeachersStore.some(t => t.staffId.toUpperCase() === staffIdNorm))
-      return setError("A teacher with this Staff ID already submitted a request.");
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
-    await new Promise(r => setTimeout(r, 900));
-    addRegisteredTeacher({
-      id: `treg_${Date.now()}`, firstName: tFirstName.trim(), surname: tSurname.trim(),
-      role: "admin", subRole: tSubRole, staffId: staffIdNorm, department: tDepartment,
-      phone: tPhone.trim(), email: tEmail.trim(), dob: "", status: "pending",
-      password: tPassword, submittedAt: new Date().toISOString(), birthdayPrivacy: false, hideYear: false,
-    });
-    setLoading(false);
-    setDone("teacher");
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    try {
+      await api.post("/api/auth/register", {
+        role: "admin",
+        first_name: tFirstName.trim(),
+        surname: tSurname.trim(),
+        staff_id: tStaffId.trim().toUpperCase(),
+        sub_role: tSubRole,
+        department: tDepartment,
+        phone: tPhone.trim(),
+        email: tEmail.trim(),
+        password: tPassword,
+      });
+      setLoading(false);
+      setDone("teacher");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err?.message ?? "Registration failed. Please try again.");
+    }
   };
 
   /* Success screen */
@@ -169,7 +178,6 @@ export default function RegisterScreen() {
             <Ionicons name="arrow-back" size={18} color="#7C3AED" />
           </View>
         </TouchableOpacity>
-
         <View style={styles.iconWrap}>
           <View style={styles.iconRing}>
             <Ionicons name="person-add-outline" size={28} color="#7C3AED" />
@@ -191,11 +199,7 @@ export default function RegisterScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={[styles.formScroll, { paddingBottom: botPad }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={[styles.formScroll, { paddingBottom: botPad }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {/* Student form */}
         {role === "student" && (
           <View>
@@ -336,7 +340,7 @@ export default function RegisterScreen() {
             </View>
 
             <Text style={[styles.label, { marginTop: 14 }]}>Staff ID *</Text>
-            <TextInput style={styles.input} placeholder="e.g. STAFF001 or CS/LEC/001" placeholderTextColor="#CBD5E1" value={tStaffId} onChangeText={setTStaffId} autoCapitalize="characters" autoCorrect={false} />
+            <TextInput style={styles.input} placeholder="e.g. STAFF001" placeholderTextColor="#CBD5E1" value={tStaffId} onChangeText={setTStaffId} autoCapitalize="characters" autoCorrect={false} />
 
             <Text style={[styles.label, { marginTop: 14 }]}>Position / Role *</Text>
             <View style={styles.levelRow}>
@@ -390,77 +394,39 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#fff" },
-
   header: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 12 },
   backLink: { alignSelf: "flex-start", marginBottom: 16 },
-  backCircle: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: "#F3EEFF", borderWidth: 1.5, borderColor: "#DDD6FE",
-    alignItems: "center", justifyContent: "center",
-  },
+  backCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#F3EEFF", borderWidth: 1.5, borderColor: "#DDD6FE", alignItems: "center", justifyContent: "center" },
   iconWrap: { alignItems: "center", marginBottom: 12 },
-  iconRing: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: "#F3EEFF", borderWidth: 2, borderColor: "#DDD6FE",
-    alignItems: "center", justifyContent: "center",
-  },
+  iconRing: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#F3EEFF", borderWidth: 2, borderColor: "#DDD6FE", alignItems: "center", justifyContent: "center" },
   heading: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#1E1B4B", textAlign: "center", marginBottom: 4 },
   sub: { fontSize: 13, fontFamily: "Inter_400Regular", color: "#64748B", textAlign: "center" },
-
-  roleSwitcher: {
-    flexDirection: "row", marginHorizontal: 24, marginBottom: 8,
-    backgroundColor: "#F3EEFF", borderRadius: 14, padding: 4,
-    borderWidth: 1, borderColor: "#DDD6FE",
-  },
-  roleTab: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 6, paddingVertical: 10, borderRadius: 10,
-  },
+  roleSwitcher: { flexDirection: "row", marginHorizontal: 24, marginBottom: 8, backgroundColor: "#F3EEFF", borderRadius: 14, padding: 4, borderWidth: 1, borderColor: "#DDD6FE" },
+  roleTab: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 10 },
   roleTabActive: { backgroundColor: "#7C3AED" },
   roleTabText: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
   roleTabTextActive: { color: "#fff" },
-
   formScroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 8 },
-
-  errorBanner: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "#FEF2F2", borderRadius: 12, padding: 12,
-    marginBottom: 16, borderWidth: 1, borderColor: "#FECACA",
-  },
+  errorBanner: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#FEF2F2", borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#FECACA" },
   errorText: { color: "#DC2626", fontSize: 13, fontFamily: "Inter_400Regular", flex: 1 },
-
-  teacherBanner: {
-    flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: "#F5F0FF", borderRadius: 12, padding: 12,
-    marginBottom: 16, borderWidth: 1, borderColor: "#DDD6FE",
-  },
+  teacherBanner: { flexDirection: "row", alignItems: "flex-start", gap: 8, backgroundColor: "#F5F0FF", borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: "#DDD6FE" },
   teacherBannerText: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#5B21B6", flex: 1, lineHeight: 18 },
-
   row: { flexDirection: "row", gap: 10 },
   label: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#374151", marginBottom: 7 },
-  input: {
-    backgroundColor: "#FAFAFA", borderWidth: 1.5, borderColor: "#E8E0FF",
-    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13,
-    fontSize: 15, fontFamily: "Inter_400Regular", color: "#1E1B4B",
-  },
+  input: { backgroundColor: "#FAFAFA", borderWidth: 1.5, borderColor: "#E8E0FF", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15, fontFamily: "Inter_400Regular", color: "#1E1B4B" },
   inputRow: { flexDirection: "row", alignItems: "center" },
   eyeBtn: { position: "absolute", right: 12, padding: 4 },
   levelRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
-  levelChip: {
-    paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20,
-    backgroundColor: "#F8FAFC", borderWidth: 1.5, borderColor: "#E2E8F0",
-  },
+  levelChip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: "#F8FAFC", borderWidth: 1.5, borderColor: "#E2E8F0" },
   levelChipActive: { backgroundColor: "#EDE9FF", borderColor: "#7C3AED" },
   levelChipText: { fontSize: 13, fontFamily: "Inter_600SemiBold", color: "#64748B" },
   levelChipTextActive: { color: "#7C3AED" },
   dropdownBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   dropdownBtnText: { fontSize: 15, fontFamily: "Inter_400Regular", color: "#1E1B4B", flex: 1 },
-
   submitBtn: { marginTop: 20, borderRadius: 16, overflow: "hidden" },
   submitGrad: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15 },
   submitBtnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
   note: { fontSize: 12, fontFamily: "Inter_400Regular", color: "#94A3B8", textAlign: "center", marginTop: 12, lineHeight: 18 },
-
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   pickerSheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36 },
   pickerHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: "#E2E8F0", alignSelf: "center", marginBottom: 16 },
@@ -471,7 +437,6 @@ const styles = StyleSheet.create({
   pickerItemTextActive: { fontFamily: "Inter_600SemiBold", color: "#7C3AED" },
   pickerCancel: { marginTop: 16, alignItems: "center", backgroundColor: "#F1F5F9", borderRadius: 14, paddingVertical: 14 },
   pickerCancelText: { fontSize: 16, fontFamily: "Inter_600SemiBold", color: "#64748B" },
-
   successCard: { backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 28, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", padding: 32, alignItems: "center", gap: 16, width: "100%" },
   successTitle: { fontSize: 24, fontFamily: "Inter_700Bold", color: "#fff", textAlign: "center" },
   successBody: { fontSize: 14, fontFamily: "Inter_400Regular", color: "rgba(255,255,255,0.75)", textAlign: "center", lineHeight: 22 },

@@ -1,31 +1,9 @@
-export type RegisteredTeacher = {
-  id: string;
-  firstName: string;
-  surname: string;
-  role: "admin";
-  subRole: "Lecturer";
-  staffId: string;
-  department: string;
-  phone: string;
-  email: string;
-  dob: string;
-  status: "pending" | "active" | "rejected";
-  password: string;
-  submittedAt: string;
-  birthdayPrivacy: boolean;
-  hideYear: boolean;
-};
+// Registration is now handled by the backend API.
+// This file is kept as an empty stub so existing imports don't break.
 
-export const registeredTeachersStore: RegisteredTeacher[] = [];
+import type { AuthUser } from "@/data/types";
 
-export function addRegisteredTeacher(teacher: RegisteredTeacher) {
-  registeredTeachersStore.push(teacher);
-}
+export const registeredTeachersStore: (AuthUser & { password: string })[] = [];
 
-export function updateRegisteredTeacherStatus(
-  id: string,
-  status: "active" | "rejected"
-) {
-  const idx = registeredTeachersStore.findIndex((t) => t.id === id);
-  if (idx !== -1) registeredTeachersStore[idx].status = status;
-}
+export function addRegisteredTeacher(_teacher: AuthUser & { password: string }) {}
+export function updateRegisteredTeacherStatus(_id: string, _status: string) {}

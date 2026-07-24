@@ -7,27 +7,19 @@ import React, {
   useState,
 } from "react";
 import { router } from "expo-router";
-import { registeredStudentsStore } from "./registeredStudentsStore";
-import { registeredTeachersStore } from "./registeredTeachersStore";
+import { api, AUTH_TOKEN_KEY, AUTH_USER_KEY } from "@/utils/apiClient";
 
 export type { UserRole, AdminSubRole, AuthUser } from "@/data/types";
 import type { UserRole, AdminSubRole, AuthUser } from "@/data/types";
-
-import {
-  DEMO_STUDENTS,
-  DEMO_ADMINS,
-  DEMO_DEV,
-  AUTH_STORAGE_KEY,
-} from "@/data/seedData";
 
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  updateUser: (updates: Partial<AuthUser>) => void;
-  addAdmin: (admin: Omit<AuthUser, "id"> & { password: string }) => void;
-  allUsers: (AuthUser & { password: string })[];
+  updateUser: (updates: Partial<AuthUser>) => Promise<void>;
+  addAdmin: (admin: Omit<AuthUser, "id"> & { password: string }) => Promise<void>;
+  allUsers: AuthUser[];
   profilePictures: Record<string, string>;
 }
 
@@ -36,120 +28,80 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [adminList, setAdminList] = useState<(AuthUser & { password: string })[]>([...DEMO_ADMINS]);
-  const adminRef = React.useRef<(AuthUser & { password: string })[]>([...DEMO_ADMINS]);
+  const [allUsers, setAllUsers] = useState<AuthUser[]>([]);
   const [profilePictures, setProfilePictures] = useState<Record<string, string>>({});
 
+  // Restore session from storage on mount
   useEffect(() => {
-    const loadUser = async () => {
+    const restore = async () => {
       try {
-        const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored) as AuthUser;
-          setUser(parsed);
-        }
-      } catch {
-        // ignore
-      } finally {
-        setIsLoading(false);
-      }
+        const stored = await AsyncStorage.getItem(AUTH_USER_KEY);
+        if (stored) setUser(JSON.parse(stored) as AuthUser);
+      } catch {}
+      finally { setIsLoading(false); }
     };
-    loadUser();
+    restore();
   }, []);
 
-  const addAdmin = useCallback((admin: Omit<AuthUser, "id"> & { password: string }) => {
-    const newAdmin: AuthUser & { password: string } = { ...admin, id: `a${Date.now()}` };
-    adminRef.current = [...adminRef.current, newAdmin];
-    setAdminList([...adminRef.current]);
-  }, []);
+  // Load all users for admin/dev views (only when user is set and is admin/dev)
+  useEffect(() => {
+    if (!user || user.role === "student") return;
+    api.get<AuthUser[]>("/api/profiles").then(setAllUsers).catch(() => {});
+  }, [user?.id]);
 
   const login = useCallback(
     async (identifier: string, password: string): Promise<{ success: boolean; error?: string }> => {
       setIsLoading(true);
-      await new Promise((r) => setTimeout(r, 600));
-
-      const lower = identifier.toLowerCase().trim();
-      const allUsers = [
-        ...DEMO_STUDENTS,
-        ...adminRef.current,
-        DEMO_DEV,
-        ...registeredStudentsStore,
-        ...registeredTeachersStore,
-      ];
-      const found = allUsers.find(
-        (u) =>
-          u.matricNumber?.toLowerCase() === lower ||
-          u.surname.toLowerCase() === lower ||
-          u.staffId?.toLowerCase() === lower
-      );
-
-      if (!found) {
+      try {
+        const { token, user: apiUser } = await api.post<{ token: string; user: AuthUser }>(
+          "/api/auth/login",
+          { identifier: identifier.trim(), password }
+        );
+        await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+        await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(apiUser));
+        setUser(apiUser);
         setIsLoading(false);
-        return { success: false, error: "No account found with that identifier" };
-      }
 
-      if (found.password !== password) {
+        if (apiUser.role === "student") router.replace("/(student)/");
+        else if (apiUser.role === "admin") router.replace("/(admin)/");
+        else router.replace("/(developer)/");
+
+        return { success: true };
+      } catch (err: any) {
         setIsLoading(false);
-        return { success: false, error: "Incorrect password" };
+        return { success: false, error: err?.message ?? "Login failed" };
       }
-
-      if (found.status === "pending") {
-        setIsLoading(false);
-        return {
-          success: false,
-          error:
-            found.role === "admin"
-              ? "Your teacher account is pending approval by Super Admin."
-              : "Your account is pending approval by your Lecturer or Course Representative.",
-        };
-      }
-
-      if (found.status === "rejected") {
-        setIsLoading(false);
-        return { success: false, error: "Your account was rejected. Please contact Admin." };
-      }
-
-      const { password: _p, ...safeUser } = found;
-      setUser(safeUser);
-      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(safeUser));
-      setIsLoading(false);
-
-      if (safeUser.role === "student") router.replace("/(student)/");
-      else if (safeUser.role === "admin") router.replace("/(admin)/");
-      else router.replace("/(developer)/");
-
-      return { success: true };
     },
     []
   );
 
   const logout = useCallback(async () => {
     setUser(null);
-    await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+    setAllUsers([]);
+    await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, AUTH_USER_KEY]);
     router.replace("/login");
   }, []);
 
-  const updateUser = useCallback((updates: Partial<AuthUser>) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      const updated = { ...prev, ...updates };
-      AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated)).catch(() => {});
+  const updateUser = useCallback(async (updates: Partial<AuthUser>) => {
+    try {
+      const updated = await api.patch<AuthUser>("/api/auth/me", updates);
+      setUser(updated);
+      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
       if (updates.profilePicture) {
-        setProfilePictures((pics) => ({ ...pics, [prev.id]: updates.profilePicture! }));
+        setProfilePictures((pics) => ({ ...pics, [updated.id]: updates.profilePicture! }));
       }
-      return updated;
-    });
+    } catch {}
   }, []);
 
-  const allUsers = React.useMemo(
-    () => [...DEMO_STUDENTS, ...adminList, DEMO_DEV],
-    [adminList]
-  );
+  const addAdmin = useCallback(async (admin: Omit<AuthUser, "id"> & { password: string }) => {
+    try {
+      const created = await api.post<AuthUser>("/api/auth/register", { ...admin, role: "admin" });
+      setAllUsers((prev) => [...prev, created]);
+    } catch {}
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, isLoading, login, logout, updateUser, addAdmin, allUsers, profilePictures }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, login, logout, updateUser, addAdmin, allUsers, profilePictures }}>
       {children}
     </AuthContext.Provider>
   );
